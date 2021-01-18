@@ -25,6 +25,7 @@ require __DIR__ . '/bootstrap.php';
 // Add Routers For Benchmarking
 $routers = [
     'Symfony'        => Routers\SymfonyRouter::class,
+    'Flight Routing' => Routers\FlightRouting::class,
 ];
 
 // Print out system and PHP Info
