@@ -32,6 +32,8 @@ $routers = [
     'AuraRouter'     => Routers\AuraRouter::class,
     'RareloopRouter' => Routers\RareloopRouter::class,
     'NetteRouter'    => Routers\NetteRouter::class,
+    //'PeceeRouter'    => Routers\PeceeRouter::class,
+    //'BramusRouter'   => Routers\BramusRouter::class,
 ];
 
 // Print out system and PHP Info
