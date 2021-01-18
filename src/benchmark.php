@@ -28,6 +28,7 @@ $routers = [
     'Flight Routing' => Routers\FlightRouting::class,
     'FastRoute'      => Routers\FastRoute::class,
     'Laravel'        => Routers\LaravelRouter::class,
+    'AltoRouter'     => Routers\AltRouter::class,
 ];
 
 // Print out system and PHP Info
