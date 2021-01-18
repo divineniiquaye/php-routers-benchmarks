@@ -7,15 +7,9 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        php-versions: ['7.4', '8.0']
-        composer-flags: [""]
-        static-tests: ["true"]
-        include:
-          - php-versions: "8.0"
-            composer-flags: "--ignore-platform-req=php"
+        php-versions: ['7.4', '8.0', '8.1']
+        composer-flags: ["--ignore-platform-req=php"]
 
-          - php-versions: "8.1"
-            composer-flags: "--ignore-platform-req=php"
     runs-on: ubuntu-latest
 
     steps:
@@ -50,4 +44,4 @@ jobs:
         run: vendor/bin/phpcs
 
       - name: Run BenchMark Assertment
-        run: src/benchmark.php
+        run: php ./src/benchmark.php

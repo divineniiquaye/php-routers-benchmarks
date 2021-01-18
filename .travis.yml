@@ -15,11 +15,11 @@ before_install:
     - composer self-update
 
 install:
-    - composer install --no-progress --optimize-autoloader
+    - composer install --no-progress --optimize-autoloader --ignore-platform-req=php
 
 script:
     - ./vendor/bin/phpcs
-    - ./src/benchmark.php
+    - php ./src/benchmark.php
 
 after_success:
     - bash <(curl -s https://codecov.io/bash) -f coverage.xml
