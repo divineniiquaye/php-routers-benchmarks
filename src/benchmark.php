@@ -26,6 +26,7 @@ require __DIR__ . '/bootstrap.php';
 $routers = [
     'Symfony'        => Routers\SymfonyRouter::class,
     'Flight Routing' => Routers\FlightRouting::class,
+    'FastRoute'      => Routers\FastRoute::class,
 ];
 
 // Print out system and PHP Info
