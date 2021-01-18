@@ -18,7 +18,7 @@ $ composer require divineniiquaye/php-routers-benchmark
 
 ## 🧪 Benchmarking Process
 
-The current test creates 100 unique routes with 3 variables placeholder each.
+The current test creates 100 unique routes with 1 variables placeholder each.
 
 Example of route: `/controller1/action1/{world}`
 
@@ -40,7 +40,6 @@ The benchmarked routing implementations are:
 - [Symfony](https://github.com/symfony/routing)
 - [Laravel](https://github.com/illuminate/routing)
 - [Aura3](https://github.com/auraphp/Aura.Router)
-- [Pecee](https://github.com/pecee/simple-router)
 - [Rareloop](https://github.com/rareloop/router)
 - [AltoRouter](https://github.com/altorouter/altorouter)
 - [Nette](https://github.com/nette/routing)
