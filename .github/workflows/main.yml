@@ -2,27 +2,19 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  build:
+  benchmark:
     strategy:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
         php-versions: ['7.4', '8.0']
-        coverage: ["true"]
         composer-flags: [""]
         static-tests: ["true"]
         include:
-          - php-versions: "7.2"
-            static-tests: "false"
-
-          - php-versions: "7.3"
-            static-tests: "false"
-
           - php-versions: "8.0"
             composer-flags: "--ignore-platform-req=php"
 
           - php-versions: "8.1"
-            coverage: "false"
             composer-flags: "--ignore-platform-req=php"
     runs-on: ubuntu-latest
 
@@ -57,23 +49,5 @@ jobs:
       - name: Check Coding Standard
         run: vendor/bin/phpcs
 
-      - name: Test with Phpunit
-        run: |
-          if [ "${{ !matrix.coverage }}" == "false" ]; then
-            vendor/bin/phpunit --no-coverage
-          else
-            vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
-            bash <(curl -s https://codecov.io/bash) -f coverage.clover
-          fi
-
-      - name: Test with Phpstan
-        run: |
-          if [ "${{ matrix.static-tests }}" == "true" ]; then
-            vendor/bin/phpstan analyse
-          fi
-
-      - name: Test with Psalm
-        run: |
-          if [ "${{ matrix.static-tests }}" == "true" ]; then
-            vendor/bin/psalm --output-format=github
-          fi
+      - name: Run BenchMark Assertment
+        run: src/benchmark.php
