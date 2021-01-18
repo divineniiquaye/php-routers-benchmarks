@@ -3,7 +3,7 @@
          name="PHP_CodeSniffer"
          xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd"
 >
-    <description>The coding standard for PHP Library Starter.</description>
+    <description>The coding standard for PHP Routers BenchMark.</description>
 
     <arg name="basepath" value="."/>
     <arg name="extensions" value="php"/>
@@ -16,7 +16,6 @@
 
     <!-- Directories to be checked -->
     <file>src</file>
-    <file>tests/</file>
 
     <!-- Include full PSR-12 Coding Standard -->
     <rule ref="PSR12"/>

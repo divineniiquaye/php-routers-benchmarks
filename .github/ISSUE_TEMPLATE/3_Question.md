@@ -9,5 +9,4 @@ assignees: ''
 
 ## Question
 
-- Have you tried checking the documentation first? https://docs.biurad.com/php-starter
 - Replace this with your question
