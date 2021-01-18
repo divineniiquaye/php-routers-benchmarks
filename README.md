@@ -50,6 +50,7 @@ The benchmarked routing implementations are:
 
 This is a benchmarked results runned on [GitHub Action](https://github.com/divineniiquaye/php-routers-benchmark/runs/1722212650) with Ubuntu 18, and PHP 8.
 
+```
 PHP Version: 8.0.0 [Linux] - With XDebug Extension.
 
 
@@ -257,7 +258,7 @@ Flight Routing       72% | █████████████████�
 Laravel              18% | ██████████                                                    |
 NetteRouter          15% | ████████                                                      |
 AuraRouter            6% | ███                                                           |
-
+```
 
 [PHP]: https://php.net
 [Composer]: https://getcomposer.org
