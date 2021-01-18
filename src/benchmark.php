@@ -30,6 +30,8 @@ $routers = [
     'Laravel'        => Routers\LaravelRouter::class,
     'AltoRouter'     => Routers\AltRouter::class,
     'AuraRouter'     => Routers\AuraRouter::class,
+    'RareloopRouter' => Routers\RareloopRouter::class,
+    'NetteRouter'    => Routers\NetteRouter::class,
 ];
 
 // Print out system and PHP Info
