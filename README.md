@@ -10,10 +10,12 @@ The intent here is to benchmark and also inventory all popular PHP routing solut
 
 ## 📦 Installation & Basic Usage
 
-This project requires [PHP] 7.4 or higher. The recommended way to install, is via [Composer]. Simply run:
+This project requires [PHP] 7.4 or higher. The recommended way to install, is via [Composer] and [GitHub Ci](https://cli.github.com/) to clone the repo.:
 
 ```bash
-$ composer require divineniiquaye/php-routers-benchmark
+$ gh repo clone divineniiquaye/php-routers-benchmark
+$ cd php-routers-benchmark && composer install
+$ php src/benchmark.php
 ```
 
 ## 🧪 Benchmarking Process
