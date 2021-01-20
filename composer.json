@@ -30,6 +30,9 @@
         "pecee/simple-router": "4.2.0.6",
         "rareloop/router": "^4.4",
         "symfony/routing": "^5.2",
+        "sunrise/http-message": "^1.4",
+        "sunrise/http-router": "^2.5",
+        "sunrise/http-server-request": "^1.1",
         "symfony/config": "^5.2"
     },
     "require-dev": {

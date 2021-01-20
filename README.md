@@ -45,6 +45,7 @@ The benchmarked routing implementations are:
 - [Rareloop](https://github.com/rareloop/router)
 - [AltoRouter](https://github.com/altorouter/altorouter)
 - [Nette](https://github.com/nette/routing)
+- [Sunrise](https://github.com/sunrise/http-router)
 
 
 ## ✳️ BenchMark Results
