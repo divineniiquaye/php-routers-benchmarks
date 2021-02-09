@@ -32,6 +32,7 @@ $routers = [
     'RareloopRouter' => Routers\RareloopRouter::class,
     'NetteRouter'    => Routers\NetteRouter::class,
     'SunriseRouter'  => Routers\SunriseRouter::class,
+    'SpiralRouter'   => Routers\SpiralRouter::class,
     //'PeceeRouter'    => Routers\PeceeRouter::class,
     //'BramusRouter'   => Routers\BramusRouter::class,
 ];

@@ -46,6 +46,7 @@ The benchmarked routing implementations are:
 - [AltoRouter](https://github.com/altorouter/altorouter)
 - [Nette](https://github.com/nette/routing)
 - [Sunrise](https://github.com/sunrise-php/http-router)
+- [SpiralRouter](https://github.com/spiral/router)
 
 
 ## ✳️ BenchMark Results
