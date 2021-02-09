@@ -18,7 +18,6 @@ declare(strict_types=1);
 namespace App\BenchMark\Reporter;
 
 use App\BenchMark\Reporter\Printer\PrinterInterface;
-use RuntimeException;
 
 class BenchMark
 {
@@ -78,14 +77,14 @@ class BenchMark
      */
     public function run(string $taskName, callable $callback)
     {
-        $args = \func_get_args();
-        \array_shift($args);
-        \array_shift($args);
+        $args = array_slice(\func_get_args(), 2);
 
         $task = $this->start($taskName, $this->repeat());
 
         for ($i = 0; $i < $task->repeat(); $i++) {
-            if (\call_user_func_array($callback, $args) === false) {
+            $handle = ($callback)(...$args);
+
+            if ($handle === false) {
                 $task->failed(true);
 
                 break;
@@ -114,7 +113,7 @@ class BenchMark
         }
 
         if (isset($this->tasks[$taskName])) {
-            throw new RuntimeException("Task {$taskName} is already defined.");
+            throw new \RuntimeException("Task {$taskName} is already defined.");
         }
 
         $this->tasks[$taskName] = $task;
@@ -133,7 +132,7 @@ class BenchMark
     public function end(string $taskName): Task
     {
         if (!isset($this->tasks[$taskName])) {
-            throw new RuntimeException("Undefined task name: `'{$taskName}`.");
+            throw new \RuntimeException("Undefined task name: `'{$taskName}`.");
         }
 
         $task = $this->tasks[$taskName];
@@ -202,7 +201,7 @@ class BenchMark
     {
         $result = '';
 
-        $result .= 'PHP Version: ' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION . '.' . \PHP_RELEASE_VERSION . ' [' . \PHP_OS . ']';
+        $result .= 'PHP Version: ' . \PHP_MAJOR_VERSION . '.' . \PHP_MINOR_VERSION . '.' . \PHP_RELEASE_VERSION . ' [' . \php_uname() . ']';
 
         if (\extension_loaded('xdebug')) {
             $result .= " - With XDebug Extension.\n";
