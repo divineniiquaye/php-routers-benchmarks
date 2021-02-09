@@ -25,23 +25,25 @@ use Nette\Routing\Router;
 
 class NetteRouter extends AbstractRouter
 {
-    protected const PATH = '<world>/<method>';
+    public const PATH = '<world>/<method>';
 
-    protected const HOST = '<extension>';
+    public const HOST = '<extension>';
+
+    protected Router $router;
 
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
-            $request  = new Request(new UrlScript($path), null, null, null, null, $method);
+        foreach ($methods as $method) {
+            $path    = ($this->strategy)($method);
+            $request = new Request(new UrlScript($path), null, null, null, null, $method);
+            $route   = $this->router->match($request);
 
-            if (null === $router->match($request)) {
+            if (null === $route) {
                 return false;
             }
         }
@@ -54,16 +56,13 @@ class NetteRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy();
-
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
             $request  = new Request(new UrlScript($path . 'nette' . $method), null, null, null, null, $method);
 
-            if (null === $router->match($request)) {
+            if (null === $this->router->match($request)) {
                 return false;
             }
         }
@@ -78,15 +77,13 @@ class NetteRouter extends AbstractRouter
      */
     public function testSubDomain(): bool
     {
-        $this->generator->setHost(self::HOST);
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $hosts = $this->generator->getHosts();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(false, true);
+        foreach ($hosts as $host) {
+            $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getHosts() as $host) {
-            foreach ($this->generator->getMethods() as $method) {
-                [, $path] = $strategy($method, $host);
+            foreach ($methods as $method) {
+                $path = ($this->strategy)($method, $host);
                 $uri      = new UrlScript($path . 'nette' . $method);
 
                 if ($host !== '*') {
@@ -95,7 +92,7 @@ class NetteRouter extends AbstractRouter
 
                 $request = new Request($uri, null, null, null, null, $method);
 
-                if (null === $router->match($request)) {
+                if (null === $this->router->match($request)) {
                     return false;
                 }
             }
@@ -107,7 +104,7 @@ class NetteRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Router
+    public function buildRoutes(array $routes): void
     {
         $router = new RouteList();
 
@@ -121,6 +118,6 @@ class NetteRouter extends AbstractRouter
             }
         }
 
-        return $router;
+        $this->router = $router;
     }
 }

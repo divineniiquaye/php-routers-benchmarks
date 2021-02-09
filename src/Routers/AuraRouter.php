@@ -26,19 +26,21 @@ use Laminas\Diactoros\Uri;
 
 class AuraRouter extends AbstractRouter
 {
+    protected Matcher $router;
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Matcher $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
-            $request     = new ServerRequest([], [], $path, $method);
+        foreach ($methods as $method) {
+            $path    = ($this->strategy)($method);
+            $request = new ServerRequest([], [], $path, $method);
+            $route   = $this->router->match($request);
 
-            if (!$router->match($request) instanceof Route) {
+            if (!$route instanceof Route) {
                 return false;
             }
         }
@@ -51,16 +53,14 @@ class AuraRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var Matcher $router */
-        list($router, $strategy) = $this->getStrategy();
+        foreach ($methods as $method) {
+            $path    = ($this->strategy)($method);
+            $request = new ServerRequest([], [], $path . 'aura_router', $method);
+            $route   = $this->router->match($request);
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
-            $request     = new ServerRequest([], [], $path . 'aura_router', $method);
-
-            if (!$router->match($request) instanceof Route) {
+            if (!$route instanceof Route) {
                 return false;
             }
         }
@@ -75,16 +75,14 @@ class AuraRouter extends AbstractRouter
      */
     public function testSubDomain(): bool
     {
-        $this->generator->setHost(self::HOST);
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $hosts = $this->generator->getHosts();
 
-        /** @var Matcher $router */
-        list($router, $strategy) = $this->getStrategy(false, true);
+        foreach ($hosts as $host) {
+            $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getHosts() as $host) {
-            foreach ($this->generator->getMethods() as $method) {
-                [, $path] = $strategy($method, $host);
-                $uri = new Uri($path . 'aura_router');
+            foreach ($methods as $method) {
+                $path = ($this->strategy)($method, $host);
+                $uri  = new Uri($path . 'aura_router');
 
                 if ($host !== '*') {
                     $uri = $uri->withHost($host . 'aura');
@@ -92,7 +90,7 @@ class AuraRouter extends AbstractRouter
 
                 $request = new ServerRequest([], [], $uri, $method);
 
-                if (!$router->match($request) instanceof Route) {
+                if (!$this->router->match($request) instanceof Route) {
                     return false;
                 }
             }
@@ -104,7 +102,7 @@ class AuraRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Matcher
+    public function buildRoutes(array $routes): void
     {
         $routerContainer = new RouterContainer();
         $collection      = $routerContainer->getMap();
@@ -120,6 +118,6 @@ class AuraRouter extends AbstractRouter
             $auraRoute->allows($route['methods']);
         }
 
-        return $routerContainer->getMatcher();
+        $this->router = $routerContainer->getMatcher();
     }
 }

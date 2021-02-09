@@ -28,27 +28,40 @@ use App\BenchMark\Strategy\CaseInterface;
  */
 abstract class AbstractRouter
 {
-    protected const PATH = '{world}';
+    public const PATH = '{world}';
 
-    protected const HOST = '{extension}';
+    public const HOST = '{extension}';
 
-    /** @var array<string,mixed> */
-    protected array $config;
+    protected string $type;
 
-    protected ?CaseInterface $strategy;
+    protected bool $cache;
+
+    protected CaseInterface $strategy;
 
     protected RouteGenerator $generator;
 
     /**
-     * @param CaseInterface|null $strategy
-     * @param RouteGenerator $generator
-     * @param array<string,mixed> $config
+     * @param null|CaseInterface $strategy
+     * @param RouteGenerator     $generator
+     * @param string             $type
+     * @param bool               $cache
      */
-    public function __construct(?CaseInterface $strategy, RouteGenerator $generator, array $config)
+    public function __construct(CaseInterface $strategy, RouteGenerator $generator, string $type, bool $cache)
     {
-        $this->config    = $config;
+        $this->type      = $type;
+        $this->cache     = $cache;
         $this->strategy  = $strategy;
         $this->generator = $generator;
+    }
+
+    /**
+     * Test Router against caching support
+     *
+     * @return bool
+     */
+    public static function isCacheable(): bool
+    {
+        return false;
     }
 
     /**
@@ -69,35 +82,42 @@ abstract class AbstractRouter
      * Build routes to be used in testPath, testStatic and testSubDomain
      *
      * @param array $routes
-     *
-     * @return mixed
      */
-    abstract protected function buildRoutes(array $routes);
+    abstract public function buildRoutes(array $routes): void;
 
     /**
-     * Get the strategy for benchmarking
+     * Get the cache directory or file is router supports caching.
      *
-     * @param bool $isStatic
-     * @param bool $isHost
+     * @param string $name
+     * @param string $file
      *
-     * @return mixed[] an array of [$router, $strategy]
+     * @return null|string
      */
-    protected function getStrategy(bool $isStatic = false, bool $isHost = false): array
+    protected function getCache(string $name, string $file = null): ?string
     {
-        $config = [
-            'isolated' => $this->config['isolated'],
-            'static'   => $isStatic,
-        ];
+        if ($this->isCacheable() && $this->cache) {
+            static $subName;
 
-        if ($isHost && isset($this->config['nbHosts'])) {
-            $config['nbHosts'] = $this->config['nbHosts'];
+            switch ($this->type) {
+                case 'SubDomain':
+                    $subName = '/hosts';
+
+                    break;
+
+                case 'Path':
+                    $subName = '/paths';
+
+                    break;
+
+                case 'Static':
+                    $subName = '/static';
+
+                    break;
+            }
+
+            return __DIR__ . '/caches/' . $name . $subName . $file;
         }
 
-        list($ids, $routes) = $this->generator->generate($config);
-
-        $router = $this->buildRoutes($routes);
-        $this->strategy->add($ids);
-
-        return [$router, $this->strategy];
+        return null;
     }
 }

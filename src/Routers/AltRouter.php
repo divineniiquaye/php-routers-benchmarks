@@ -22,20 +22,21 @@ use App\BenchMark\AbstractRouter;
 
 class AltRouter extends AbstractRouter
 {
-    protected const PATH = '[a:action]';
+    public const PATH = '[a:action]';
+
+    protected AltoRouter $router;
 
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var AltoRouter $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
-            if (!$router->match($path, $method)) {
+            if (!$this->router->match($path, $method)) {
                 return false;
             }
         }
@@ -48,15 +49,12 @@ class AltRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH);
+        $methods = $this->generator->getMethods();
 
-        /** @var AltoRouter $router */
-        list($router, $strategy) = $this->getStrategy();
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
-
-            if (!$router->match($path . 'altorouter', $method)) {
+            if (!$this->router->match($path . 'altorouter', $method)) {
                 return false;
             }
         }
@@ -67,7 +65,7 @@ class AltRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): AltoRouter
+    public function buildRoutes(array $routes): void
     {
         $router = new AltoRouter();
 
@@ -77,6 +75,6 @@ class AltRouter extends AbstractRouter
             }
         }
 
-        return $router;
+        $this->router = $router;
     }
 }

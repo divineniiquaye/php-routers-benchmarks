@@ -23,20 +23,29 @@ use FastRoute\RouteCollector;
 
 class FastRoute extends AbstractRouter
 {
+    protected Dispatcher $router;
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function isCacheable(): bool
+    {
+        return true;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Dispatcher $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
-            $result = $router->dispatch($method, $path);
+            $result = $this->router->dispatch($method, $path);
 
-            if ($result[0] !== $router::FOUND) {
+            if ($result[0] !== $this->router::FOUND) {
                 return false;
             }
         }
@@ -49,17 +58,14 @@ class FastRoute extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH);
+        $methods = $this->generator->getMethods();
 
-        /** @var Dispatcher $router */
-        list($router, $strategy) = $this->getStrategy();
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+            $result = $this->router->dispatch($method, $path . 'fastroute');
 
-            $result = $router->dispatch($method, $path . 'fastroute');
-
-            if ($result[0] !== $router::FOUND) {
+            if ($result[0] !== $this->router::FOUND) {
                 return false;
             }
         }
@@ -70,16 +76,26 @@ class FastRoute extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Dispatcher
+    public function buildRoutes(array $routes): void
     {
-        $router = \FastRoute\simpleDispatcher(function (RouteCollector $router) use ($routes): void {
+        $routes = function (RouteCollector $router) use ($routes): void {
             foreach ($routes as $route) {
                 foreach ($route['methods'] as $method) {
-                    $router->addRoute($method, $route['pattern'], fn () => 'Hello');
+                    $router->addRoute($method, $route['pattern'], 'phpinfo');
                 }
             }
-        });
+        };
 
-        return $router;
+        if (null !== $cacheDir = $this->getCache('fastroute')) {
+            if (!file_exists($cacheDir)) {
+                mkdir($cacheDir, 0777, true);
+            }
+
+            $router = \FastRoute\cachedDispatcher($routes, ['cacheFile' => $cacheDir . '/compiled.php']);
+        } else {
+            $router = \FastRoute\simpleDispatcher($routes);
+        }
+
+        $this->router = $router;
     }
 }

@@ -17,7 +17,7 @@ declare(strict_types=1);
 
 namespace App\BenchMark;
 
-use ReflectionClass;
+use App\BenchMark\Strategy\CaseInterface;
 
 require __DIR__ . '/bootstrap.php';
 
@@ -36,44 +36,72 @@ $routers = [
     //'BramusRouter'   => Routers\BramusRouter::class,
 ];
 
+// This generates routes for router and matches them.
+$routerGenerator = static function (array $config, CaseInterface $strategy, string $router) {
+    [$type, $isolated, $nbRoutes, $nbHosts, $cache] = $config;
+
+    $generator = new RouteGenerator($isolated, $nbRoutes, $nbHosts);
+
+    if ($type === 'SubDomain') {
+        $generator->setHost($router::HOST);
+        $generator->setTemplate($router::PATH, ['world' => '[^/]+']);
+    } elseif ($type === 'Path') {
+        $generator->setTemplate($router::PATH, ['world' => '[^/]+']);
+    }
+
+    [$ids, $routes] = $generator->generate($type === 'Static');
+
+    /** @var \App\BenchMark\AbstractRouter $router */
+    $router = new $router($strategy, $generator, $type, $cache);
+    $method = 'test' . $type;
+
+    $router->buildRoutes($routes);
+    $strategy->add($ids);
+
+    return $router->{$method}();
+};
+
 // Print out system and PHP Info
 echo Reporter\BenchMark::systemInfo();
 
 // Start BenchMarking and produce outcome
 foreach ($modes as $title => $isolated) {
     echo Reporter\BenchMark::title($title, '#');
-    $config = ['isolated' => $isolated];
+    $config = [];
+
+    if ('With Routes Supporting All HTTP Methods And Cache' === $title) {
+        $config['cache'] = true;
+    }
 
     foreach ($benchmarks as $bench) {
-        $type = $bench['type'];
         static $strategy;
 
         foreach ($bench['forms'] as $title => $variables) {
             foreach ($variables as $key => $value) {
                 if ('strategy' === $key) {
-                    $strategy = (new ReflectionClass($value))->newInstanceWithoutConstructor();
+                    $strategy = new $value();
 
                     continue;
                 }
-
                 $config[$key] = $value;
             }
 
             $benchmark = new Reporter\BenchMark();
             echo Reporter\BenchMark::title($title);
-            $benchmark->repeat(10);
+            $benchmark->repeat(100);
 
             foreach ($routers as $name => $router) {
-                $generator = new RouteGenerator();
-                $generator->nbRoutes($bench['nbRoutes']);
-
-                $routerReflection = new ReflectionClass($router);
-
-                if ($routerReflection->hasMethod($method = 'test' . $type)) {
-                    $router = $routerReflection->newInstanceArgs([$strategy, $generator, $config]);
-
-                    $benchmark->run($name, [$router, $method]);
+                if (isset($config['cache']) && !$router::isCacheable()) {
+                    continue;
                 }
+
+                if (!\method_exists($router, 'test' . $bench['type'])) {
+                    continue;
+                }
+
+                $data = [$bench['type'], $isolated, $bench['nbRoutes'], $config['nbHosts'] ?? 1, isset($config['cache'])];
+
+                $benchmark->run($name, $routerGenerator, $data, $strategy, $router);
 
                 \gc_collect_cycles();
             }
@@ -81,4 +109,9 @@ foreach ($modes as $title => $isolated) {
             echo $benchmark->report();
         }
     }
+}
+
+// Remove cache directory after benchmark.
+if (__DIR__ . '/caches') {
+    \rmdir(__DIR__ . '/caches');
 }

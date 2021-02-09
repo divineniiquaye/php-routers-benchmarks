@@ -26,22 +26,26 @@ use Sunrise\Http\Router\RequestHandler\CallableRequestHandler;
 use Sunrise\Http\Router\Route;
 use Sunrise\Http\Router\Router;
 use Sunrise\Http\ServerRequest\ServerRequestFactory;
+use Sunrise\Uri\Uri;
 
 class SunriseRouter extends AbstractRouter
 {
+    public const HOST = '';
+
+    protected Router $router;
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->handle((new ServerRequestFactory())->createServerRequest($method, $path));
+                $this->router->handle((new ServerRequestFactory())->createServerRequest($method, $path));
             } catch (RouteNotFoundException $e) {
                 return false;
             }
@@ -55,16 +59,13 @@ class SunriseRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy();
-
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->handle((new ServerRequestFactory())->createServerRequest(
+                $this->router->handle((new ServerRequestFactory())->createServerRequest(
                     $method,
                     $path . 'sunrise_router'
                 ));
@@ -77,23 +78,48 @@ class SunriseRouter extends AbstractRouter
     }
 
     /**
+     * Test Sub Domain with route path
+     *
+     * @return bool
+     */
+    public function testSubDomain(): bool
+    {
+        $hosts = $this->generator->getHosts();
+
+        foreach ($hosts as $host) {
+            $methods = $this->generator->getMethods();
+
+            foreach ($methods as $method) {
+                $path = ($this->strategy)($method, $host);
+                $uri = new Uri($path . 'sunrise_router');
+
+                if ($host !== '*') {
+                    $uri = $uri->withHost($host);
+                }
+
+                try {
+                    $this->router->match((new ServerRequestFactory())->createServerRequest($method, $uri));
+                } catch (RouteNotFoundException $e) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Router
+    public function buildRoutes(array $routes): void
     {
         $router = new Router();
 
         foreach ($routes as $route) {
-            $pattern = $route['pattern'];
-
-            if ('*' !== $route['host']) {
-                $pattern = $route['host'] . $pattern;
-            }
-
-            $frRoute = new Route(
-                '_' . $route['name'],
-                $pattern,
-                (array) $route['methods'],
+            $srRoute = new Route(
+                $route['name'],
+                $route['pattern'],
+                $route['methods'],
                 new CallableRequestHandler(
                     function (ServerRequestInterface $request): ResponseInterface {
                         return (new ResponseFactory())->createJsonResponse(200, [
@@ -104,9 +130,13 @@ class SunriseRouter extends AbstractRouter
                 )
             );
 
-            $router->addRoute($frRoute);
+            if ('*' !== $route['host']) {
+                $srRoute->setHost($route['host']);
+            }
+
+            $router->addRoute($srRoute);
         }
 
-        return $router;
+        $this->router = $router;
     }
 }

@@ -23,23 +23,26 @@ use Pecee\SimpleRouter\SimpleRouter;
 
 class PeceeRouter extends AbstractRouter
 {
+    protected SimpleRouter $router;
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var SimpleRouter $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $request = $router::request();
+                $request = $this->router::request();
                 $request->setUrl((new \Pecee\Http\Url($path)));
                 $request->setMethod(\strtolower($method));
 
-                $router->start();
+                \ob_start();
+                $this->router->start();
+                \ob_get_clean();
             } catch (NotFoundHttpException $e) {
                 return false;
             }
@@ -53,20 +56,19 @@ class PeceeRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH);
+        $methods = $this->generator->getMethods();
 
-        /** @var SimpleRouter $router */
-        list($router, $strategy) = $this->getStrategy();
-
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $request = $router::request();
+                $request = $this->router::request();
                 $request->setUrl((new \Pecee\Http\Url($path . 'pecee_router')));
                 $request->setMethod(\strtolower($method));
 
-                $router->start();
+                \ob_start();
+                $this->router->start();
+                \ob_get_clean();
             } catch (NotFoundHttpException $e) {
                 return false;
             }
@@ -78,7 +80,7 @@ class PeceeRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): SimpleRouter
+    public function buildRoutes(array $routes): void
     {
         $router = new SimpleRouter();
 
@@ -88,6 +90,6 @@ class PeceeRouter extends AbstractRouter
             }
         }
 
-        return $router;
+        $this->router = $router;
     }
 }

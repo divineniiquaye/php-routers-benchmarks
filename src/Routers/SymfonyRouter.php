@@ -23,30 +23,32 @@ use Symfony\Component\Routing\Loader\ClosureLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
-use Symfony\Component\Routing\RouterInterface;
 
 class SymfonyRouter extends AbstractRouter
 {
+    protected Router $router;
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function isCacheable(): bool
+    {
+        return true;
+    }
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var RouterInterface $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [$id, $path] = $strategy($method);
-
-            $router->getContext()->setMethod($method);
-            $params = $router->match($path);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
+            $this->router->getContext()->setMethod($method);
 
             try {
-                $params = $router->match($path);
-
-                if (($params['id'] ?? null) !== $id) {
-                    return false;
-                }
+                $this->router->match($path);
             } catch (ResourceNotFoundException $e) {
                 return false;
             }
@@ -60,22 +62,15 @@ class SymfonyRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var RouterInterface $router */
-        list($router, $strategy) = $this->getStrategy();
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
-        foreach ($this->generator->getMethods() as $method) {
-            [$id, $path] = $strategy($method);
-
-            $router->getContext()->setMethod($method);
+            $this->router->getContext()->setMethod($method);
 
             try {
-                $params = $router->match($path . 'symfony');
-
-                if (($params['id'] ?? null) !== $id) {
-                    return false;
-                }
+                $this->router->match($path . 'symfony');
             } catch (ResourceNotFoundException $e) {
                 return false;
             }
@@ -91,15 +86,14 @@ class SymfonyRouter extends AbstractRouter
      */
     public function testSubDomain(): bool
     {
-        $this->generator->setHost(self::HOST);
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $hosts = $this->generator->getHosts();
+        $router = clone $this->router;
 
-        /** @var RouterInterface $router */
-        list($router, $strategy) = $this->getStrategy(false, true);
+        foreach ($hosts as $host) {
+            $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getHosts() as $host) {
-            foreach ($this->generator->getMethods() as $method) {
-                [$id, $path] = $strategy($method, $host);
+            foreach ($methods as $method) {
+                $path = ($this->strategy)($method, $host);
 
                 if ($host !== '*') {
                     $router->getContext()->setHost($host . 'symfony');
@@ -107,11 +101,7 @@ class SymfonyRouter extends AbstractRouter
                 $router->getContext()->setMethod($method);
 
                 try {
-                    $params = $router->match($path . 'symfony');
-
-                    if (($params['id'] ?? null) !== $id) {
-                        return false;
-                    }
+                    $router->match($path . 'symfony');
                 } catch (ResourceNotFoundException $e) {
                     return false;
                 }
@@ -124,26 +114,32 @@ class SymfonyRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): RouterInterface
+    public function buildRoutes(array $routes): void
     {
         $resource = static function () use ($routes): RouteCollection {
             $sfCollection = new RouteCollection();
 
             foreach ($routes as $route) {
-                $sfRoute = new Route($route['pattern'], ['id' => $route['name']]);
+                $sfRoute = new Route($route['pattern']);
 
                 if ($route['host'] !== '*') {
                     $sfRoute->setHost($route['host']);
                 }
-
                 $sfRoute->setMethods($route['methods']);
                 $sfRoute->setRequirements($route['constraints']);
+
                 $sfCollection->add($route['pattern'], $sfRoute);
             }
 
             return $sfCollection;
         };
 
-        return new Router(new ClosureLoader(), $resource);
+        $router = new Router(new ClosureLoader(), $resource);
+
+        if (null !== $cacheDir = $this->getCache('symfony')) {
+            $router->setOption('cache_dir', $cacheDir);
+        }
+
+        $this->router = $router;
     }
 }

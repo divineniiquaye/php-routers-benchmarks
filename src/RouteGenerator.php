@@ -19,12 +19,17 @@ namespace App\BenchMark;
 
 use Fig\Http\Message\RequestMethodInterface;
 use Lead\Text\Text;
-use RuntimeException;
 
 class RouteGenerator
 {
     /** The number of routes. */
-    protected int $nbRoutes = 1;
+    protected int $nbRoutes;
+
+    /** The number of hosts. */
+    protected int $nbHosts;
+
+    /** Where to use all methods or not. */
+    protected bool $isolated;
 
     /** The scheme constraint. */
     protected ?string $scheme = null;
@@ -49,6 +54,13 @@ class RouteGenerator
         RequestMethodInterface::METHOD_PATCH,
         RequestMethodInterface::METHOD_DELETE,
     ];
+
+    public function __construct(bool $isolated, int $routes = 1, int $hosts = 1)
+    {
+        $this->isolated = $isolated;
+        $this->nbRoutes = $routes;
+        $this->nbHosts  = $hosts;
+    }
 
     /**
      * Get all methods
@@ -83,65 +95,34 @@ class RouteGenerator
     }
 
     /**
-     * Gets/sets the number of routes.
-     *
-     * @param int $nb the number of routes to set or none the get the current one
-     *
-     * @return int|self the number of routes or `$this` on set
-     */
-    public function nbRoutes(?int $nb = null)
-    {
-        if (null !== $nb) {
-            $this->nbRoutes = $nb;
-
-            return $this;
-        }
-
-        return $this->nbRoutes;
-    }
-
-    /**
      * Generates a bunch of routes.
      *
-     * @param array $options an option array
+     * @param bool $isStatic
      *
      * @return mixed the generated routes array
      */
-    public function generate(array $options = []): array
+    public function generate(bool $isStatic = false): array
     {
-        $options = \array_replace([
-            'nbHosts'  => 1,
-            'isolated' => false,
-        ], $options);
-
-        $isolated    = $options['isolated'];
-        $isStatic    = $options['static'] ?? false;
         $scheme      = $this->scheme;
         $hosts       = ['*' => '*'];
         $constraints = $this->constraints;
 
         if (!$isStatic && !$this->template) {
-            throw new RuntimeException('Missing path template.');
+            throw new \RuntimeException('Missing path template.');
         }
 
         if (null !== $this->host) {
             $pattern = $this->host;
-            $nbHosts = $options['nbHosts'];
 
-            for ($i = 1; $i <= $nbHosts; $i++) {
-                $host    = \sprintf(
-                    'subdomain%s.domain.%s',
-                    $i,
-                    Text::insert($pattern, $constraints, ['before' => '{%', 'after' => '%}'])
-                );
+            for ($i = 1; $i <= $this->nbHosts; $i++) {
+                $host = Text::insert($pattern, $constraints, ['before' => '{%', 'after' => '%}']);
 
-                $hosts["subdomain{$i}.domain."] = $host;
+                $hosts["subdomain{$i}.domain."] = \sprintf( 'subdomain%s.domain.%s', $i, $host);
             }
         }
 
-        $nbRoutes = $this->nbRoutes();
-        $ids      = [];
-        $id       = 1;
+        $ids = [];
+        $id  = 1;
 
         foreach ($hosts as $domain => $host) {
             $this->hosts[] = $domain;
@@ -153,15 +134,20 @@ class RouteGenerator
                 RequestMethodInterface::METHOD_DELETE => [],
             ];
 
-            for ($i = 0; $i < $nbRoutes; $i++) {
-                $path     = \sprintf('/controller%s/action%1$s/', $id);
-                $pattern  = $path . Text::insert($isStatic ? '' : $this->template, $constraints, ['before' => '{%', 'after' => '%}']);
-                $methods  = $isolated ? [$this->methods[$i % 5]] : $this->methods;
-                $name     = $id;
+            for ($i = 0; $i < $this->nbRoutes; $i++) {
+                $path    = \sprintf('/controller%s/action%1$s/', $id);
+                $pattern = $path . Text::insert($this->template, $constraints, ['before' => '{%', 'after' => '%}']);
+                $methods = $this->isolated ? [$this->methods[$i % 5]] : $this->methods;
+                $name    = '_' . $id;
+
+                if ($isStatic) {
+                    $pattern = $this->template ?? $path;
+                }
+
                 $routes[] = \compact('name', 'scheme', 'host', 'pattern', 'methods', 'constraints');
 
                 foreach ($methods as $method) {
-                    $ids[$domain][$method][] = [$id, $path];
+                    $ids[$domain][$method][] = $path;
                 }
 
                 $id++;

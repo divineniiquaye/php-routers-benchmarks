@@ -18,26 +18,26 @@ declare(strict_types=1);
 namespace App\BenchMark\Routers;
 
 use App\BenchMark\AbstractRouter;
-use Exception;
 use Laminas\Diactoros\ServerRequest;
 use Rareloop\Router\Router;
 
 class RareloopRouter extends AbstractRouter
 {
+    protected Router $router;
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->match(new ServerRequest([], [], $path, $method));
-            } catch (Exception $e) {
+                $this->router->match(new ServerRequest([], [], $path, $method));
+            } catch (\Exception $e) {
                 return false;
             }
         }
@@ -50,17 +50,14 @@ class RareloopRouter extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy();
-
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->match(new ServerRequest([], [], $path . 'rareloop_router', $method));
-            } catch (Exception $e) {
+                $this->router->match(new ServerRequest([], [], $path . 'rareloop_router', $method));
+            } catch (\Exception $e) {
                 return false;
             }
         }
@@ -71,7 +68,7 @@ class RareloopRouter extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Router
+    public function buildRoutes(array $routes): void
     {
         $router = new Router();
 
@@ -80,6 +77,6 @@ class RareloopRouter extends AbstractRouter
                 ->where($route['constraints']);
         }
 
-        return $router;
+        $this->router = $router;
     }
 }

@@ -19,28 +19,28 @@ namespace App\BenchMark\Routers;
 
 use App\BenchMark\AbstractRouter;
 use Flight\Routing\Exceptions\RouteNotFoundException;
-use Flight\Routing\Route;
-use Flight\Routing\Router;
-use Laminas\Diactoros\ResponseFactory;
+use Flight\Routing\Interfaces\RouteMatcherInterface;
+use Flight\Routing\Matchers\SimpleRouteMatcher;
+use Flight\Routing\RouteCollection;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Uri;
-use Laminas\Diactoros\UriFactory;
 
 class FlightRouting extends AbstractRouter
 {
+    protected RouteMatcherInterface $router;
+
     /**
      * {@inheritdoc}
      */
     public function testStatic(): bool
     {
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(true);
+        $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->handle(new ServerRequest([], [], $path, $method));
+                $this->router->match(new ServerRequest([], [], $path, $method));
             } catch (RouteNotFoundException $e) {
                 return false;
             }
@@ -54,16 +54,13 @@ class FlightRouting extends AbstractRouter
      */
     public function testPath(): bool
     {
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $methods = $this->generator->getMethods();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy();
-
-        foreach ($this->generator->getMethods() as $method) {
-            [, $path] = $strategy($method);
+        foreach ($methods as $method) {
+            $path = ($this->strategy)($method);
 
             try {
-                $router->handle(new ServerRequest([], [], $path . 'flight_routing', $method));
+                $this->router->match(new ServerRequest([], [], $path . 'flight_routing', $method));
             } catch (RouteNotFoundException $e) {
                 return false;
             }
@@ -79,15 +76,13 @@ class FlightRouting extends AbstractRouter
      */
     public function testSubDomain(): bool
     {
-        $this->generator->setHost(self::HOST);
-        $this->generator->setTemplate(self::PATH, ['world' => '[^/]+']);
+        $hosts = $this->generator->getHosts();
 
-        /** @var Router $router */
-        list($router, $strategy) = $this->getStrategy(false, true);
+        foreach ($hosts as $host) {
+            $methods = $this->generator->getMethods();
 
-        foreach ($this->generator->getHosts() as $host) {
-            foreach ($this->generator->getMethods() as $method) {
-                [, $path] = $strategy($method, $host);
+            foreach ($methods as $method) {
+                $path = ($this->strategy)($method, $host);
                 $uri = new Uri($path . 'flight_routing');
 
                 if ($host !== '*') {
@@ -95,7 +90,7 @@ class FlightRouting extends AbstractRouter
                 }
 
                 try {
-                    $router->handle(new ServerRequest([], [], $uri, $method));
+                    $this->router->match(new ServerRequest([], [], $uri, $method));
                 } catch (RouteNotFoundException $e) {
                     return false;
                 }
@@ -108,23 +103,19 @@ class FlightRouting extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    protected function buildRoutes(array $routes): Router
+    public function buildRoutes(array $routes): void
     {
-        $router = new Router(new ResponseFactory(), new UriFactory());
+        $frCollection = new RouteCollection(false);
 
         foreach ($routes as $route) {
-            $pattern = $route['pattern'];
+            $frRoute = $frCollection->addRoute($route['pattern'], $route['methods'])
+                ->bind($route['name'])->asserts($route['constraints']);
 
             if ('*' !== $route['host']) {
-                $pattern = $route['host'] . $pattern;
+                $frRoute->domain($route['host']);
             }
-
-            $frRoute = new Route('_' . $route['name'], (array) $route['methods'], $pattern, fn () => 'Hello');
-            $frRoute->setPatterns($route['constraints']);
-
-            $router->addRoute($frRoute);
         }
 
-        return $router;
+        $this->router = new SimpleRouteMatcher($frCollection);
     }
 }
