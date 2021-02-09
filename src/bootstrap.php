@@ -20,12 +20,13 @@ require __DIR__ . '/../vendor/autoload.php';
 $modes = [
     'With Routes Supporting All HTTP Methods'           => false,
     'With Routes Supporting Only A Single HTTP Methods' => true,
+    'With Routes Supporting All HTTP Methods And Cache' => false,
 ];
 
 $benchmarks = [
     [
         'type'       => 'Static',
-        'nbRoutes'   => 100,
+        'nbRoutes'   => 300,
         'forms'      => [
             'Best Case (static-path)' => [
                 'strategy' => App\BenchMark\Strategy\BestCase::class,
@@ -40,7 +41,7 @@ $benchmarks = [
     ],
     [
         'type'       => 'Path',
-        'nbRoutes'   => 100,
+        'nbRoutes'   => 150,
         'forms'      => [
             'Best Case (dynamic-path)' => [
                 'strategy' => App\BenchMark\Strategy\BestCase::class,
