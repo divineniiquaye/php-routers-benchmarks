@@ -117,7 +117,7 @@ class RouteGenerator
             for ($i = 1; $i <= $this->nbHosts; $i++) {
                 $host = Text::insert($pattern, $constraints, ['before' => '{%', 'after' => '%}']);
 
-                $hosts["subdomain{$i}.domain."] = \sprintf( 'subdomain%s.domain.%s', $i, $host);
+                $hosts["subdomain{$i}.domain."] = \sprintf('subdomain%s.domain.%s', $i, $host);
             }
         }
 

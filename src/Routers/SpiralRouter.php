@@ -81,12 +81,11 @@ class SpiralRouter extends AbstractRouter
     public function buildRoutes(array $routes): void
     {
         $container = new Container();
-        $container->bind(ResponseFactoryInterface::class, new ResponseFactory);
+        $container->bind(ResponseFactoryInterface::class, new ResponseFactory());
 
-        $router = new Router('/', new UriHandler(new UriFactory), $container);
+        $router = new Router('/', new UriHandler(new UriFactory()), $container);
 
         foreach ($routes as $route) {
-
             $spRoute = new Route($route['pattern'], fn () => 'Hello World');
             $spRoute->withVerbs(...$route['methods']);
 
