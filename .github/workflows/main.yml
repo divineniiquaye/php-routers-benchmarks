@@ -44,4 +44,4 @@ jobs:
         run: vendor/bin/phpcs
 
       - name: Run BenchMark Assertment
-        run: vendor/bin/phpbench run --report detail
+        run: vendor/bin/phpbench run --report default
