@@ -31,8 +31,6 @@ use Sunrise\Uri\Uri;
 
 class SunriseRouter extends AbstractRouter
 {
-    public const HOST = '';
-
     private Router $router;
 
     /**
