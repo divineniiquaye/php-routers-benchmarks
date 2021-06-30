@@ -22,107 +22,86 @@ use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class LaravelRouter extends AbstractRouter
 {
-    protected Router $router;
+    private Router $router;
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0', 'result' => 'Laravel'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abc199', 'result' => 'Laravel'];
 
-            $request = Request::create($path, $method);
-            $result  = $this->router->dispatch($request)->getContent();
+        yield 'Worst Case' => ['route' => '/abc399', 'result' => 'Laravel'];
 
-            if ($result !== 'Hello') {
-                return false;
-            }
-        }
-
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0', 'result' => 'Laravel'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar/199', 'result' => 'Laravel'];
 
-            $request = Request::create($path . 'laravel', $method);
-            $result  = $this->router->dispatch($request)->getContent();
+        yield 'Worst Case' => ['route' => '/abcbar/399', 'result' => 'Laravel'];
 
-            if ($result !== 'laravel') {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Test Sub Domain with route path
-     *
-     * @return bool
-     */
-    public function testSubDomain(): bool
-    {
-        $hosts = $this->generator->getHosts();
-
-        foreach ($hosts as $host) {
-            $methods = $this->generator->getMethods();
-
-            foreach ($methods as $method) {
-                $path = ($this->strategy)($method, $host);
-                $server   = [];
-
-                if ($host !== '*') {
-                    $server['HTTP_HOST'] = $host . 'laravel';
-                }
-
-                $request = Request::create($path . 'laravel', $method, [], [], [], $server);
-                $result  = $this->router->dispatch($request)->getContent();
-
-                if ($result !== 'laravel') {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $router = new Router(new Dispatcher(), new Container());
 
-        foreach ($routes as $route) {
-            $action = [
-                'uses' => function ($id = 'Hello') {
-                    return $id;
-                },
-            ];
+        for ($i = 0; $i < 400; ++$i) {
+            $router->addRoute(self::ALL_METHODS, '/abc' . $i, fn () => 'Laravel')->name('static_' . $i);
+            $router->addRoute(self::ALL_METHODS, '/abc{foo}/' . $i, fn () => 'Laravel')->name('not_static_' . $i);
 
-            if ($route['host'] !== '*') {
-                $action['domain'] = $route['host'];
-            }
-
-            $router->addRoute($route['methods'], $route['pattern'], $action)
-                ->setWheres($route['constraints']);
+            $router->addRoute(self::ALL_METHODS, '/host/abc' . $i, fn () => 'Laravel')->domain(self::DOMAIN)->name('static_host_' . $i);
+            $router->addRoute(self::ALL_METHODS, '/host/abc{foo}/' . $i, fn () => 'Laravel')->domain(self::DOMAIN)->name('not_static_host_' . $i);
         }
 
         $this->router = $router;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        $path = (isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'];
+
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            try {
+                $result = $this->router->dispatch(Request::create($path, $params['invalid'] ?? $params['method']))->getContent();
+                \assert($params['result'] === $result);
+            } catch (MethodNotAllowedHttpException | NotFoundHttpException $e) {
+                \assert(false === $params['result']); // If method does not match ...
+            }
+        } else {
+            foreach ($params['method'] as $method) {
+                $result = $this->router->dispatch(Request::create($path, $method))->getContent();
+                \assert($params['result'] === $result);
+            }
+        }
     }
 }

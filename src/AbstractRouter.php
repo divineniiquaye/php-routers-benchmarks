@@ -17,107 +17,79 @@ declare(strict_types=1);
 
 namespace App\BenchMark;
 
-use App\BenchMark\Strategy\CaseInterface;
-
 /**
  * An abstraction for benchmarking routers.
  *
- * @method bool testSubDomain()
+ * @Warmup(2)
+ * @Revs(1000)
+ * @Iterations(5)
+ * @BeforeMethods({"createDispatcher"})
  *
  * @author Divine Niiquaye Ibok <divineibok@gmail.com>
  */
 abstract class AbstractRouter
 {
-    public const PATH = '{world}';
+    protected const ALL_METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
 
-    public const HOST = '{extension}';
+    protected const SINGLE_METHOD = 'GET';
 
-    protected string $type;
+    protected const INVALID_METHOD = 'TRACE';
 
-    protected bool $cache;
+    protected const DOMAIN = 'benchmark.com';
 
-    protected CaseInterface $strategy;
+    abstract public function createDispatcher(): void;
 
-    protected RouteGenerator $generator;
+    /** @param array<string,mixed> $params */
+    abstract protected function runScenario(array $params): void;
 
-    /**
-     * @param null|CaseInterface $strategy
-     * @param RouteGenerator     $generator
-     * @param string             $type
-     * @param bool               $cache
-     */
-    public function __construct(CaseInterface $strategy, RouteGenerator $generator, string $type, bool $cache)
+    /** @return \Generator<string,array<string,mixed>> */
+    abstract public function provideStaticRoutes(): iterable;
+
+    /** @return \Generator<string,array<string,mixed>> */
+    abstract public function provideDynamicRoutes(): iterable;
+
+    /** @return \Generator<string,array<string,mixed>> */
+    abstract public function provideOtherScenarios(): iterable;
+
+    /** @return \Generator<string,array<string,mixed>> */
+    public function provideDispatcher(): iterable
     {
-        $this->type      = $type;
-        $this->cache     = $cache;
-        $this->strategy  = $strategy;
-        $this->generator = $generator;
-    }
+        yield 'GET Method' => ['method' => self::SINGLE_METHOD];
+        yield 'ALL Methods' => ['method' => self::ALL_METHODS];
 
-    /**
-     * Test Router against caching support
-     *
-     * @return bool
-     */
-    public static function isCacheable(): bool
-    {
-        return false;
-    }
-
-    /**
-     * Test Dynamic path eg: /{var}
-     *
-     * @return bool
-     */
-    abstract public function testPath(): bool;
-
-    /**
-     * Test static path eg: /hello
-     *
-     * @return bool
-     */
-    abstract public function testStatic(): bool;
-
-    /**
-     * Build routes to be used in testPath, testStatic and testSubDomain
-     *
-     * @param array $routes
-     */
-    abstract public function buildRoutes(array $routes): void;
-
-    /**
-     * Get the cache directory or file is router supports caching.
-     *
-     * @param string $name
-     * @param string $file
-     *
-     * @return null|string
-     */
-    protected function getCache(string $name, string $file = null): ?string
-    {
-        if ($this->isCacheable() && $this->cache) {
-            static $subName;
-
-            switch ($this->type) {
-                case 'SubDomain':
-                    $subName = '/hosts';
-
-                    break;
-
-                case 'Path':
-                    $subName = '/paths';
-
-                    break;
-
-                case 'Static':
-                    $subName = '/static';
-
-                    break;
-            }
-
-            return __DIR__ . '/caches/' . $name . $subName . $file;
+        if (null !== static::DOMAIN) {
+            yield 'GET Method & Domain' => ['method' => self::SINGLE_METHOD, 'domain' => static::DOMAIN];
+            yield 'ALL Methods' => ['method' => self::ALL_METHODS, 'domain' => static::DOMAIN];
         }
+    }
 
-        return null;
+    /**
+     * @ParamProviders({"provideDispatcher", "provideStaticRoutes"})
+     *
+     * @param array<string,mixed> $params
+     */
+    public function benchStaticRoutes(array $params): void
+    {
+        $this->runScenario($params);
+    }
+
+    /**
+     * @ParamProviders({"provideDispatcher", "provideDynamicRoutes"})
+     *
+     * @param array<string,mixed> $params
+     */
+    public function benchDynamicRoutes(array $params): void
+    {
+        $this->runScenario($params);
+    }
+
+    /**
+     * @ParamProviders({"provideDispatcher", "provideOtherScenarios"})
+     *
+     * @param array<string,mixed> $params
+     */
+    public function benchOtherRoutes(array $params): void
+    {
+        $this->runScenario($params);
     }
 }

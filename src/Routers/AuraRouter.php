@@ -26,98 +26,82 @@ use Laminas\Diactoros\Uri;
 
 class AuraRouter extends AbstractRouter
 {
-    protected Matcher $router;
+    private Matcher $router;
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0'];
 
-        foreach ($methods as $method) {
-            $path    = ($this->strategy)($method);
-            $request = new ServerRequest([], [], $path, $method);
-            $route   = $this->router->match($request);
+        yield 'Average Case' => ['route' => '/abc199'];
 
-            if (!$route instanceof Route) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0'];
 
-        foreach ($methods as $method) {
-            $path    = ($this->strategy)($method);
-            $request = new ServerRequest([], [], $path . 'aura_router', $method);
-            $route   = $this->router->match($request);
+        yield 'Average Case' => ['route' => '/abcbar/199'];
 
-            if (!$route instanceof Route) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abcbar/399'];
 
-        return true;
-    }
-
-    /**
-     * Test Sub Domain with route path
-     *
-     * @return bool
-     */
-    public function testSubDomain(): bool
-    {
-        $hosts = $this->generator->getHosts();
-
-        foreach ($hosts as $host) {
-            $methods = $this->generator->getMethods();
-
-            foreach ($methods as $method) {
-                $path = ($this->strategy)($method, $host);
-                $uri  = new Uri($path . 'aura_router');
-
-                if ($host !== '*') {
-                    $uri = $uri->withHost($host . 'aura');
-                }
-
-                $request = new ServerRequest([], [], $uri, $method);
-
-                if (!$this->router->match($request) instanceof Route) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $routerContainer = new RouterContainer();
-        $collection      = $routerContainer->getMap();
+        $collection = $routerContainer->getMap();
 
-        foreach ($routes as $route) {
-            $auraRoute = $collection->route($route['name'], $route['pattern'], fn () => 'Hello');
+        for ($i = 0; $i < 400; ++$i) {
+            $collection->route('static_' . $i, '/abc' . $i, 'Alto')->allows(self::ALL_METHODS);
+            $collection->route('not_static_' . $i, '/abc{foo}/' . $i, 'Alto')->allows(self::ALL_METHODS);
 
-            if ($route['host'] !== '*') {
-                $auraRoute->host($route['host']);
-            }
-
-            $auraRoute->tokens($route['constraints']);
-            $auraRoute->allows($route['methods']);
+            $collection->route('static_host_' . $i, '/host/abc' . $i, 'Alto')->allows(self::ALL_METHODS)->host(self::DOMAIN);
+            $collection->route('not_static_host_' . $i, '/host/abc{foo}/' . $i, 'Alto')->allows(self::ALL_METHODS)->host(self::DOMAIN);
         }
 
         $this->router = $routerContainer->getMatcher();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        $uri = new Uri((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']);
+
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $request = new ServerRequest([], [], $uri, $params['invalid'] ?? $params['method']);
+            $result = $this->router->match($request);
+
+            \assert(isset($params['result']) ? $params['result'] === $result : $result instanceof Route);
+        } else {
+            foreach ($params['method'] as $method) {
+                $request = new ServerRequest([], [], $uri, $method);
+                $result = $this->router->match($request);
+
+                \assert($result instanceof Route);
+            }
+        }
     }
 }

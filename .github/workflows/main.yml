@@ -1,4 +1,4 @@
-name: Tests
+name: BenchMark
 on: [push, pull_request]
 
 jobs:
@@ -44,4 +44,4 @@ jobs:
         run: vendor/bin/phpcs
 
       - name: Run BenchMark Assertment
-        run: php ./src/benchmark.php
+        run: vendor/bin/phpbench run --report detail

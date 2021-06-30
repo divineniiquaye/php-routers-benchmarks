@@ -18,11 +18,11 @@ declare(strict_types=1);
 namespace App\BenchMark\Routers;
 
 use App\BenchMark\AbstractRouter;
-use Flight\Routing\Exceptions\RouteNotFoundException;
+use Flight\Routing\Exceptions\MethodNotAllowedException;
 use Flight\Routing\Interfaces\RouteMatcherInterface;
-use Flight\Routing\Matchers\SimpleRouteMatcher;
+use Flight\Routing\Route;
 use Flight\Routing\RouteCollection;
-use Laminas\Diactoros\ServerRequest;
+use Flight\Routing\RouteMatcher;
 use Laminas\Diactoros\Uri;
 
 class FlightRouting extends AbstractRouter
@@ -32,90 +32,78 @@ class FlightRouting extends AbstractRouter
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abc199'];
 
-            try {
-                $this->router->match(new ServerRequest([], [], $path, $method));
-            } catch (RouteNotFoundException $e) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => 405];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar_foo-path/0'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar_foo-path/199'];
 
-            try {
-                $this->router->match(new ServerRequest([], [], $path . 'flight_routing', $method));
-            } catch (RouteNotFoundException $e) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Test Sub Domain with route path
-     *
-     * @return bool
-     */
-    public function testSubDomain(): bool
-    {
-        $hosts = $this->generator->getHosts();
-
-        foreach ($hosts as $host) {
-            $methods = $this->generator->getMethods();
-
-            foreach ($methods as $method) {
-                $path = ($this->strategy)($method, $host);
-                $uri = new Uri($path . 'flight_routing');
-
-                if ($host !== '*') {
-                    $uri = $uri->withHost($host . 'flight_routing');
-                }
-
-                try {
-                    $this->router->match(new ServerRequest([], [], $uri, $method));
-                } catch (RouteNotFoundException $e) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        yield 'Worst Case' => ['route' => '/abcbar_foo-path/399'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
     {
-        $frCollection = new RouteCollection(false);
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar_foo-path/399', 'result' => 405];
 
-        foreach ($routes as $route) {
-            $frRoute = $frCollection->addRoute($route['pattern'], $route['methods'])
-                ->bind($route['name'])->asserts($route['constraints']);
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+    }
 
-            if ('*' !== $route['host']) {
-                $frRoute->domain($route['host']);
-            }
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
+    {
+        $collection = new RouteCollection();
+
+        for ($i = 0; $i < 400; ++$i) {
+            $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
+            $collection->addRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
+
+            $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
+            $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}_{bar}-{path}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
         }
 
-        $this->router = new SimpleRouteMatcher($frCollection);
+        $this->router = new RouteMatcher($collection);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        $uri = new Uri((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'] . '');
+
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            try {
+                $result = $this->router->match($params['invalid'] ?? $params['method'], $uri);
+
+                \assert(isset($params['result']) ? null === $result : $result instanceof Route);
+            } catch (MethodNotAllowedException $e) {
+                \assert($params['result'] === $e->getCode()); // If method does not match ...
+            }
+        } else {
+            foreach ($params['method'] as $method) {
+                $result = $this->router->match($method, $uri);
+
+                \assert($result instanceof Route);
+            }
+        }
     }
 }

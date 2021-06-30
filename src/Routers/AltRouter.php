@@ -22,59 +22,74 @@ use App\BenchMark\AbstractRouter;
 
 class AltRouter extends AbstractRouter
 {
-    public const PATH = '[a:action]';
+    protected const DOMAIN = null;
 
-    protected AltoRouter $router;
+    private AltoRouter $router;
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0', 'result' => 'Alto'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abc199', 'result' => 'Alto'];
 
-            if (!$this->router->match($path, $method)) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399', 'result' => 'Alto'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0', 'result' => 'Alto'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar/199', 'result' => 'Alto'];
 
-            if (!$this->router->match($path . 'altorouter', $method)) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abcbar/399', 'result' => 'Alto'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $router = new AltoRouter();
 
-        foreach ($routes as $route) {
-            foreach ($route['methods'] as $method) {
-                $router->map($method, $route['pattern'], fn () => 'Hello');
-            }
+        for ($i = 0; $i < 400; ++$i) {
+            $router->map(\implode('|', self::ALL_METHODS), '/abc' . $i, 'Alto', 'static_' . $i);
+            $router->map(\implode('|', self::ALL_METHODS), '/abc[a:foo]/' . $i, 'Alto', 'not_static_' . $i);
         }
 
         $this->router = $router;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $result = $this->router->match($params['route'], $params['invalid'] ?? $params['method']);
+            \assert($params['result'] === (\is_array($result) ? $result['target'] : false));
+        } else {
+            foreach ($params['method'] as $method) {
+                $result = $this->router->match($params['route'], $method);
+                \assert($params['result'] === $result['target']);
+            }
+        }
     }
 }

@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
 
-class SymfonyRouter extends AbstractRouter
+class SymfonyRouterCached extends AbstractRouter
 {
     private Router $router;
 
@@ -84,7 +84,7 @@ class SymfonyRouter extends AbstractRouter
             return $collection;
         };
 
-        $this->router = new Router(new ClosureLoader(), $resource);
+        $this->router = new Router(new ClosureLoader(), $resource, ['cache_dir' => __DIR__ . '/../caches/symfony']);
     }
 
     /**

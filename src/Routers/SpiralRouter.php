@@ -31,67 +31,85 @@ use Spiral\Router\UriHandler;
 
 class SpiralRouter extends AbstractRouter
 {
-    public const PATH = '<world>';
+    protected const DOMAIN = null;
 
-    protected RouterInterface $router;
+    private RouterInterface $router;
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0', 'result' => 'Spiral'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abc199', 'result' => 'Spiral'];
 
-            try {
-                $this->router->handle(new ServerRequest([], [], $path, $method));
-            } catch (RouteNotFoundException $e) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399', 'result' => 'Spiral'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0', 'result' => 'Spiral'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar/199', 'result' => 'Spiral'];
 
-            try {
-                $this->router->handle(new ServerRequest([], [], $path . 'spiral_router', $method));
-            } catch (RouteNotFoundException $e) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abcbar/399', 'result' => 'Spiral'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $container = new Container();
         $container->bind(ResponseFactoryInterface::class, new ResponseFactory());
 
         $router = new Router('/', new UriHandler(new UriFactory()), $container);
 
-        foreach ($routes as $route) {
-            $spRoute = new Route($route['pattern'], fn () => 'Hello World');
-            $spRoute->withVerbs(...$route['methods']);
-
-            $router->setRoute($route['name'], $spRoute);
+        for ($i = 0; $i < 400; ++$i) {
+            $router->setRoute('static_' . $i, (new Route('/abc' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
+            $router->setRoute('not_static_' . $i, (new Route('/abc<foo>/' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
         }
 
         $this->router = $router;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $request = new ServerRequest([], [], $params['route'], $params['invalid'] ?? $params['method']);
+
+            try {
+                $result = (string) $this->router->handle($request)->getBody();
+                \assert($params['result'] === $result);
+            } catch (RouteNotFoundException $e) {
+                \assert(!isset($params['result']));
+            }
+        } else {
+            foreach ($params['method'] as $method) {
+                $request = new ServerRequest([], [], $params['route'], $method);
+                $result = (string) $this->router->handle($request)->getBody();
+
+                \assert($params['result'] === $result);
+            }
+        }
     }
 }

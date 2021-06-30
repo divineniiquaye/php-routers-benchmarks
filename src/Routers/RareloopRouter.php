@@ -21,62 +21,83 @@ use App\BenchMark\AbstractRouter;
 use Laminas\Diactoros\ServerRequest;
 use Rareloop\Router\Router;
 
+/**
+ * @Skip
+ */
 class RareloopRouter extends AbstractRouter
 {
-    protected Router $router;
+    protected const DOMAIN = null;
+
+    private Router $router;
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0', 'result' => 'Rareloop'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abc199', 'result' => 'Rareloop'];
 
-            try {
-                $this->router->match(new ServerRequest([], [], $path, $method));
-            } catch (\Exception $e) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399', 'result' => 'Rareloop'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => 'Resource not found'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0', 'result' => 'Rareloop'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar/199', 'result' => 'Rareloop'];
 
-            try {
-                $this->router->match(new ServerRequest([], [], $path . 'rareloop_router', $method));
-            } catch (\Exception $e) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abcbar/399', 'result' => 'Rareloop'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => 'Resource not found'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => 'Resource not found'];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $router = new Router();
 
-        foreach ($routes as $route) {
-            $router->map($route['methods'], $route['pattern'], fn () => 'Hello')
-                ->where($route['constraints']);
+        for ($i = 0; $i < 400; ++$i) {
+            $router->map(self::ALL_METHODS, '/abc' . $i, fn () => 'Rareloop')->name('static_' . $i);
+            $router->map(self::ALL_METHODS, '/abc{foo}/' . $i, fn () => 'Rareloop')->name('not_static_' . $i);
         }
 
         $this->router = $router;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $request = new ServerRequest([], [], $params['route'], $params['invalid'] ?? $params['method']);
+            $result = (string) $this->router->match($request)->getBody();
+
+            \assert($params['result'] === $result);
+        } else {
+            foreach ($params['method'] as $method) {
+                $request = new ServerRequest([], [], $params['route'], $method);
+                $result = (string) $this->router->match($request)->getBody();
+
+                \assert($params['result'] === $result);
+            }
+        }
     }
 }

@@ -1,0 +1,29 @@
+{
+    "runner.bootstrap": "vendor/autoload.php",
+    "runner.path": "src/Routers",
+    "runner.output_mode": "time",
+    "runner.time_unit": "milliseconds",
+    "runner.php_config": {
+        "opcache.enable": true,
+        "opcache.enable_cli": true,
+        "opcache.jit": 1235,
+        "apc.enable": true,
+        "apc.enable_cli": true
+    },
+
+    "report.generators": {
+        "default": {
+            "extends": "aggregate",
+            "title": "PHP Routers Benchmark",
+            "cols": [ "benchmark", "mem_peak", "mode", "best", "mean", "worst", "stdev", "rstdev" ]
+        }
+   },
+   "report.outputs": {
+        "table_style": [ "borderless" ],
+        "sort": { "column": "mean" }
+    },
+
+    "core.extensions": [
+        "PhpBench\\Extensions\\XDebug\\XDebugExtension"
+    ]
+}

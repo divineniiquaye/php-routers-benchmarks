@@ -23,79 +23,72 @@ use FastRoute\RouteCollector;
 
 class FastRoute extends AbstractRouter
 {
-    protected Dispatcher $router;
+    protected const DOMAIN = null;
+
+    protected Dispatcher $dispatcher;
 
     /**
      * {@inheritdoc}
      */
-    public static function isCacheable(): bool
+    public function provideStaticRoutes(): iterable
     {
-        return true;
+        yield 'Best Case' => ['route' => '/abc0', 'result' => Dispatcher::FOUND];
+
+        yield 'Average Case' => ['route' => '/abc199', 'result' => Dispatcher::FOUND];
+
+        yield 'Worst Case' => ['route' => '/abc399', 'result' => Dispatcher::FOUND];
+
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => Dispatcher::METHOD_NOT_ALLOWED];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0', 'result' => Dispatcher::FOUND];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
+        yield 'Average Case' => ['route' => '/abcbar/199', 'result' => Dispatcher::FOUND];
 
-            $result = $this->router->dispatch($method, $path);
-
-            if ($result[0] !== $this->router::FOUND) {
-                return false;
-            }
-        }
-
-        return true;
+        yield 'Worst Case' => ['route' => '/abcbar/399','result' => Dispatcher::FOUND];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideOtherScenarios(): iterable
     {
-        $methods = $this->generator->getMethods();
-
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
-
-            $result = $this->router->dispatch($method, $path . 'fastroute');
-
-            if ($result[0] !== $this->router::FOUND) {
-                return false;
-            }
-        }
-
-        return true;
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => Dispatcher::NOT_FOUND];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function createDispatcher(): void
     {
-        $routes = function (RouteCollector $router) use ($routes): void {
-            foreach ($routes as $route) {
-                foreach ($route['methods'] as $method) {
-                    $router->addRoute($method, $route['pattern'], 'phpinfo');
+        $this->dispatcher = \FastRoute\simpleDispatcher(
+            static function (RouteCollector $routes): void {
+                for ($i = 0; $i < 400; ++$i) {
+                    $routes->addRoute(self::ALL_METHODS, '/abc' . $i, ['name' => 'static_' . $i]);
+                    $routes->addRoute(self::ALL_METHODS, '/abc{foo}/' . $i, ['name' => 'not_static_' . $i]);
                 }
             }
-        };
+        );
+    }
 
-        if (null !== $cacheDir = $this->getCache('fastroute')) {
-            if (!file_exists($cacheDir)) {
-                mkdir($cacheDir, 0777, true);
-            }
-
-            $router = \FastRoute\cachedDispatcher($routes, ['cacheFile' => $cacheDir . '/compiled.php']);
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $result = $this->dispatcher->dispatch($params['invalid'] ?? $params['method'], $params['route']);
+            \assert($params['result'] === $result[0]);
         } else {
-            $router = \FastRoute\simpleDispatcher($routes);
+            foreach ($params['method'] as $method) {
+                $result = $this->dispatcher->dispatch($method, $params['route']);
+                \assert($params['result'] === $result[0]);
+            }
         }
-
-        $this->router = $router;
     }
 }

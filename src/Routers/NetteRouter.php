@@ -25,99 +25,82 @@ use Nette\Routing\Router;
 
 class NetteRouter extends AbstractRouter
 {
-    public const PATH = '<world>/<method>';
-
-    public const HOST = '<extension>';
-
-    protected Router $router;
+    private Router $router;
 
     /**
      * {@inheritdoc}
      */
-    public function testStatic(): bool
+    public function provideStaticRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abc0'];
 
-        foreach ($methods as $method) {
-            $path    = ($this->strategy)($method);
-            $request = new Request(new UrlScript($path), null, null, null, null, $method);
-            $route   = $this->router->match($request);
+        yield 'Average Case' => ['route' => '/abc199'];
 
-            if (null === $route) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abc399'];
 
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399'];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function testPath(): bool
+    public function provideDynamicRoutes(): iterable
     {
-        $methods = $this->generator->getMethods();
+        yield 'Best Case' => ['route' => '/abcbar/0'];
 
-        foreach ($methods as $method) {
-            $path = ($this->strategy)($method);
-            $request  = new Request(new UrlScript($path . 'nette' . $method), null, null, null, null, $method);
+        yield 'Average Case' => ['route' => '/abcbar/199'];
 
-            if (null === $this->router->match($request)) {
-                return false;
-            }
-        }
+        yield 'Worst Case' => ['route' => '/abcbar/399'];
 
-        return true;
-    }
-
-    /**
-     * Test Sub Domain with route path
-     *
-     * @return bool
-     */
-    public function testSubDomain(): bool
-    {
-        $hosts = $this->generator->getHosts();
-
-        foreach ($hosts as $host) {
-            $methods = $this->generator->getMethods();
-
-            foreach ($methods as $method) {
-                $path = ($this->strategy)($method, $host);
-                $uri      = new UrlScript($path . 'nette' . $method);
-
-                if ($host !== '*') {
-                    $uri = $uri->withHost($host . 'nette');
-                }
-
-                $request = new Request($uri, null, null, null, null, $method);
-
-                if (null === $this->router->match($request)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => false];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildRoutes(array $routes): void
+    public function provideOtherScenarios(): iterable
+    {
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function createDispatcher(): void
     {
         $router = new RouteList();
 
-        foreach ($routes as $route) {
-            if ('*' !== $route['host']) {
-                $router->withDomain($route['host']);
-            }
+        for ($i = 0; $i < 400; ++$i) {
+            $router->addRoute('/abc' . $i, ['method' => self::ALL_METHODS]);
+            $router->addRoute('/abc{foo}/' . $i, ['method' => self::ALL_METHODS]);
 
-            foreach ($route['methods'] as $method) {
-                $router->addRoute($route['pattern'], ['world' => 'Hello', 'method' => $method]);
-            }
+            $router->addRoute('//' . self::DOMAIN . '/host/abc' . $i, ['method' => self::ALL_METHODS]);
+            $router->addRoute('//' . self::DOMAIN . '/host/abc<foo>/' . $i, ['method' => self::ALL_METHODS]);
         }
 
         $this->router = $router;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function runScenario(array $params): void
+    {
+        $path = new UrlScript((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']);
+
+        if (isset($params['invalid']) || \is_string($params['method'])) {
+            $method = $params['invalid'] ?? $params['method'];
+            $request  = new Request($path, null, null, null, null, $method);
+            $result = $this->router->match($request);
+
+            \assert(isset($params['result']) ? null === $result : \in_array($method, $result['method'], true));
+        } else {
+            foreach ($params['method'] as $method) {
+                $request  = new Request($path, null, null, null, null, $method);
+                $result = $this->router->match($request);
+
+                \assert(\in_array($method, $result['method'], true));
+            }
+        }
     }
 }
