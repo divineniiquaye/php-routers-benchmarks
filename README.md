@@ -15,7 +15,7 @@ This project requires [PHP] 7.4 or higher. The recommended way to install, is vi
 ```bash
 $ gh repo clone divineniiquaye/php-routers-benchmark
 $ cd php-routers-benchmark && composer install
-$ php vendor/bin/phpbench run --report detail
+$ php vendor/bin/phpbench run --report default
 ```
 
 ## 🧪 Benchmarking Process
