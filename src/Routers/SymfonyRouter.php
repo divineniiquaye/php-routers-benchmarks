@@ -40,7 +40,7 @@ class SymfonyRouter extends AbstractRouter
 
         yield 'Worst Case' => ['route' => '/abc399'];
 
-        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399'];
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399', 'result' => 405];
     }
 
     /**
@@ -54,7 +54,7 @@ class SymfonyRouter extends AbstractRouter
 
         yield 'Worst Case' => ['route' => '/abcbar/399'];
 
-        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399'];
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => 405];
     }
 
     /**
@@ -62,7 +62,7 @@ class SymfonyRouter extends AbstractRouter
      */
     public function provideOtherScenarios(): iterable
     {
-        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
+        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => 404];
     }
 
     /**
@@ -92,22 +92,24 @@ class SymfonyRouter extends AbstractRouter
      */
     protected function runScenario(array $params): void
     {
-        $path = (isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'];
+        if (isset($params['domain'])) {
+            $this->router->getContext()->setHost($params['domain']);
+        }
 
         if (isset($params['invalid']) || \is_string($params['method'])) {
             $this->router->getContext()->setMethod($params['invalid'] ?? $params['method']);
 
             try {
-                $result = $this->router->match($path);
+                $result = $this->router->match($params['route']);
 
                 \assert(!empty($result));
             } catch (MethodNotAllowedException | ResourceNotFoundException $e) {
-                \assert(!isset($param['result'])); // If method does not match ...
+                \assert($params['result'] === $e->getCode()); // If method does not match ...
             }
         } else {
             foreach ($params['method'] as $method) {
                 $this->router->getContext()->setMethod($method);
-                $result = $this->router->match($path);
+                $result = $this->router->match($params['route']);
 
                 \assert(!empty($result));
             }
