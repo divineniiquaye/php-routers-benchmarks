@@ -22,7 +22,7 @@ $ php vendor/bin/phpbench run --report default
 
 The benchmarking process uses [phpbench](https://github.com/phpbench/phpbench). I can say of the benchmarks projects I've seen, my benchmark process is one of the best out there. With much reading and experimenting, I took inspiration from [Nikita Popov's](https://www.npopov.com/) blog post ["Fast request routing using regular expressions"](https://www.npopov.com/2014/02/18/Fast-request-routing-using-regular-expressions.html) and [Nicolas Grekas](https://nicolas-grekas.medium.com/) blog posts [Making Symfony’s Router 77.7x faster - 1/2](https://nicolas-grekas.medium.com/making-symfonys-router-77-7x-faster-1-2-958e3754f0e1), and [Making Symfony router lightning fast - 2/2 ](https://nicolas-grekas.medium.com/making-symfony-router-lightning-fast-2-2-19281dcd245b) in creating the benchmark process.
 
-All router creates a total of about 1,600 unique routes, either up to, or lesser. With each having 400 for static paths, dynamic paths of 3 variable placeholders, a domain with static path, and a domain with dynamic path having 3 variable placeholder.
+All router creates a total of about 1,600 unique routes, either up to, or lesser. With each having 400 for static paths, dynamic paths of 1 variable placeholders, a domain with static path, and a domain with dynamic path having 1 variable placeholder.
 
 Benchmarks runs on three cases:
 
