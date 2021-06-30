@@ -15,11 +15,12 @@
         "default": {
             "extends": "aggregate",
             "title": "PHP Routers Benchmark",
-            "cols": [ "benchmark", "mem_peak", "mode", "best", "mean", "worst", "stdev", "rstdev" ]
+            "cols": [ "benchmark", "set", "mem_peak", "mode", "best", "mean", "worst", "stdev", "rstdev" ]
         }
    },
    "report.outputs": {
         "table_style": [ "borderless" ],
+        "break": [ "benchmark" ],
         "sort": { "column": "mean" }
     },
 
