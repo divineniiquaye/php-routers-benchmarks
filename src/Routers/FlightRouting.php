@@ -48,11 +48,13 @@ class FlightRouting extends AbstractRouter
      */
     public function provideDynamicRoutes(): iterable
     {
-        yield 'Best Case' => ['route' => '/abcbar_foo-path/0'];
+        yield 'Best Case' => ['route' => '/abcbar/0'];
 
-        yield 'Average Case' => ['route' => '/abcbar_foo-path/199'];
+        yield 'Average Case' => ['route' => '/abcbar/199'];
 
-        yield 'Worst Case' => ['route' => '/abcbar_foo-path/399'];
+        yield 'Worst Case' => ['route' => '/abcbar/399'];
+
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => 405];
     }
 
     /**
@@ -60,8 +62,6 @@ class FlightRouting extends AbstractRouter
      */
     public function provideOtherScenarios(): iterable
     {
-        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar_foo-path/399', 'result' => 405];
-
         yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
     }
 
@@ -74,10 +74,10 @@ class FlightRouting extends AbstractRouter
 
         for ($i = 0; $i < 400; ++$i) {
             $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
-            $collection->addRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
+            $collection->addRoute('/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
 
             $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
-            $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}_{bar}-{path}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
+            $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
         }
 
         $this->router = new RouteMatcher($collection);

@@ -35,7 +35,7 @@ class FlightRoutingCached extends FlightRouting
                 $collection->addRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
 
                 $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
-                $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}_{bar}-{path}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
+                $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
             }
         }
 

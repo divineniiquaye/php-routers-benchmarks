@@ -51,6 +51,8 @@ class FastRoute extends AbstractRouter
         yield 'Average Case' => ['route' => '/abcbar/199', 'result' => Dispatcher::FOUND];
 
         yield 'Worst Case' => ['route' => '/abcbar/399','result' => Dispatcher::FOUND];
+
+        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399', 'result' => Dispatcher::METHOD_NOT_ALLOWED];
     }
 
     /**

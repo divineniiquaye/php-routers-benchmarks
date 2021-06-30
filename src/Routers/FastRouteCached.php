@@ -31,7 +31,7 @@ class FastRouteCached extends FastRoute
                     $routes->addRoute(self::ALL_METHODS, '/abc{foo}/' . $i, ['name' => 'not_static_' . $i]);
                 }
             },
-            ['cacheKey' => __DIR__ . '/../caches-fast-cached-routes.php']
+            ['cacheKey' => __DIR__ . '/../caches/fast-cached-routes.php']
         );
     }
 }
