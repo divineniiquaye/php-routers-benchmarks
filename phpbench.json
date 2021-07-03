@@ -3,6 +3,7 @@
     "runner.path": "src/Routers",
     "runner.output_mode": "time",
     "runner.time_unit": "milliseconds",
+    "runner.retry_threshold": 5,
     "runner.php_config": {
         "opcache.enable": true,
         "opcache.enable_cli": true,
@@ -13,18 +14,13 @@
 
     "report.generators": {
         "default": {
-            "extends": "aggregate",
+            "extends": "expression",
             "title": "PHP Routers Benchmark",
-            "cols": [ "benchmark", "set", "mem_peak", "mode", "best", "mean", "worst", "stdev", "rstdev" ]
+            "break": [ "benchmark" ],
+            "cols": [ "benchmark", "subject", "set", "mem_peak", "mode", "best", "mean", "worst", "stdev", "rstdev" ]
         }
    },
    "report.outputs": {
-        "table_style": [ "borderless" ],
-        "break": [ "benchmark" ],
         "sort": { "column": "mean" }
-    },
-
-    "core.extensions": [
-        "PhpBench\\Extensions\\XDebug\\XDebugExtension"
-    ]
+    }
 }
