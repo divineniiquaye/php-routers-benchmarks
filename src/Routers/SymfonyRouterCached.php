@@ -17,54 +17,13 @@ declare(strict_types=1);
 
 namespace App\BenchMark\Routers;
 
-use App\BenchMark\AbstractRouter;
-use Symfony\Component\Routing\Exception\MethodNotAllowedException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Loader\ClosureLoader;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
 
-class SymfonyRouterCached extends AbstractRouter
+class SymfonyRouterCached extends SymfonyRouter
 {
-    private Router $router;
-
-    /**
-     * {@inheritdoc}
-     */
-    public function provideStaticRoutes(): iterable
-    {
-        yield 'Best Case' => ['route' => '/abc0'];
-
-        yield 'Average Case' => ['route' => '/abc199'];
-
-        yield 'Worst Case' => ['route' => '/abc399'];
-
-        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abc399'];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function provideDynamicRoutes(): iterable
-    {
-        yield 'Best Case' => ['route' => '/abcbar/0'];
-
-        yield 'Average Case' => ['route' => '/abcbar/199'];
-
-        yield 'Worst Case' => ['route' => '/abcbar/399'];
-
-        yield 'Invalid Method' => ['invalid' => self::INVALID_METHOD, 'route' => '/abcbar/399'];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function provideOtherScenarios(): iterable
-    {
-        yield 'Non Existent' => ['invalid' => self::SINGLE_METHOD, 'route' => '/testing', 'result' => false];
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -85,32 +44,5 @@ class SymfonyRouterCached extends AbstractRouter
         };
 
         $this->router = new Router(new ClosureLoader(), $resource, ['cache_dir' => __DIR__ . '/../caches/symfony']);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function runScenario(array $params): void
-    {
-        $path = (isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'];
-
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $this->router->getContext()->setMethod($params['invalid'] ?? $params['method']);
-
-            try {
-                $result = $this->router->match($path);
-
-                \assert(!empty($result));
-            } catch (MethodNotAllowedException | ResourceNotFoundException $e) {
-                \assert(!isset($param['result'])); // If method does not match ...
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $this->router->getContext()->setMethod($method);
-                $result = $this->router->match($path);
-
-                \assert(!empty($result));
-            }
-        }
     }
 }

@@ -27,7 +27,7 @@ use Symfony\Component\Routing\Router;
 
 class SymfonyRouter extends AbstractRouter
 {
-    private Router $router;
+    protected Router $router;
 
     /**
      * {@inheritdoc}
