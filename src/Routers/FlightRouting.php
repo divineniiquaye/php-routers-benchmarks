@@ -20,9 +20,7 @@ namespace App\BenchMark\Routers;
 use App\BenchMark\AbstractRouter;
 use Flight\Routing\Exceptions\MethodNotAllowedException;
 use Flight\Routing\Interfaces\RouteMatcherInterface;
-use Flight\Routing\Route;
-use Flight\Routing\RouteCollection;
-use Flight\Routing\RouteMatcher;
+use Flight\Routing\{Route, RouteCollection, Router};
 use Laminas\Diactoros\Uri;
 
 class FlightRouting extends AbstractRouter
@@ -80,7 +78,10 @@ class FlightRouting extends AbstractRouter
             $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
         }
 
-        $this->router = new RouteMatcher($collection);
+        $router = new Router();
+        $router->setCollection($collection);
+
+        $this->router = $router;
     }
 
     /**

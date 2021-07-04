@@ -17,8 +17,7 @@ declare(strict_types=1);
 
 namespace App\BenchMark\Routers;
 
-use Flight\Routing\RouteCollection;
-use Flight\Routing\RouteMatcher;
+use Flight\Routing\{RouteCollection, Router};
 
 class FlightRoutingCached extends FlightRouting
 {
@@ -27,9 +26,11 @@ class FlightRoutingCached extends FlightRouting
      */
     public function createDispatcher(): void
     {
-        $collection = new RouteCollection(null, false, __DIR__ . '/../caches/flight-routes.php');
+        $router = new Router(null, __DIR__ . '/../caches/flight-routes.php');
 
-        if (!$collection->isCached()) {
+        if (!$router->isCached()) {
+            $collection = new RouteCollection();
+
             for ($i = 0; $i < 400; ++$i) {
                 $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
                 $collection->addRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
@@ -37,8 +38,10 @@ class FlightRoutingCached extends FlightRouting
                 $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
                 $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
             }
+
+            $router->setCollection($collection);
         }
 
-        $this->router = new RouteMatcher($collection);
+        $this->router = $router;
     }
 }
