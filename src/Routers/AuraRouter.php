@@ -24,6 +24,9 @@ use Aura\Router\RouterContainer;
 use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Uri;
 
+/**
+ * Groups(['aura-router', 'raw'])
+ */
 class AuraRouter extends AbstractRouter
 {
     private Matcher $router;

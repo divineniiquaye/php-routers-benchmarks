@@ -20,6 +20,9 @@ namespace App\BenchMark\Routers;
 use AltoRouter;
 use App\BenchMark\AbstractRouter;
 
+/**
+ * Groups(['alto-router', 'raw'])
+ */
 class AltRouter extends AbstractRouter
 {
     protected const DOMAIN = null;

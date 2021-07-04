@@ -19,6 +19,9 @@ namespace App\BenchMark\Routers;
 
 use Flight\Routing\{RouteCollection, Router};
 
+/**
+ * Groups(['flight-routing', 'cached'])
+ */
 class FlightRoutingCached extends FlightRouting
 {
     /**

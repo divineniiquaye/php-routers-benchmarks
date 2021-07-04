@@ -22,6 +22,9 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
 
+/**
+ * Groups(['symfony', 'cached'])
+ */
 class SymfonyRouterCached extends SymfonyRouter
 {
     /**

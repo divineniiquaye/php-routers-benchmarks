@@ -21,6 +21,9 @@ use App\BenchMark\AbstractRouter;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
 
+/**
+ * Groups(['fast-route', 'raw'])
+ */
 class FastRoute extends AbstractRouter
 {
     protected const DOMAIN = null;

@@ -23,6 +23,9 @@ use Flight\Routing\Interfaces\RouteMatcherInterface;
 use Flight\Routing\{Route, RouteCollection, Router};
 use Laminas\Diactoros\Uri;
 
+/**
+ * Groups(['flight-routing', 'raw'])
+ */
 class FlightRouting extends AbstractRouter
 {
     protected RouteMatcherInterface $router;

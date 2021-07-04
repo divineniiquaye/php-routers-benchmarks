@@ -29,6 +29,9 @@ use Sunrise\Http\Router\Router;
 use Sunrise\Http\ServerRequest\ServerRequestFactory;
 use Sunrise\Uri\Uri;
 
+/**
+ * Groups(['sunrise-router', 'raw'])
+ */
 class SunriseRouter extends AbstractRouter
 {
     private Router $router;

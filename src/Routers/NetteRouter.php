@@ -23,6 +23,9 @@ use Nette\Http\UrlScript;
 use Nette\Routing\RouteList;
 use Nette\Routing\Router;
 
+/**
+ * Groups(['nette', 'raw'])
+ */
 class NetteRouter extends AbstractRouter
 {
     private Router $router;

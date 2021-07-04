@@ -25,6 +25,9 @@ use Illuminate\Routing\Router;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Groups(['laravel', 'raw'])
+ */
 class LaravelRouter extends AbstractRouter
 {
     private Router $router;

@@ -29,6 +29,9 @@ use Spiral\Router\Router;
 use Spiral\Router\RouterInterface;
 use Spiral\Router\UriHandler;
 
+/**
+ * Groups(['spiral-router', 'raw'])
+ */
 class SpiralRouter extends AbstractRouter
 {
     protected const DOMAIN = null;
