@@ -34,8 +34,7 @@ All the routers follows a set of [Parameterized Benchmarking](https://phpbench.r
 
 - in the first set benchmarking scenario, routers are to match only a single HTTP method.
 - in the second set benchmarking scenario, routers are to match all HTTP methods.
-- in the third set benchmarking scenario, routers are to match the first set including a domain.
-- in the fourth set benchmarking scenario, routers are to match the second set including a domain.
+- in the third and last set of benchmarking, routers are to match the first set including a domain if available.
 
 Benchmarking were conducted on the following routers:
 

@@ -58,8 +58,7 @@ abstract class AbstractRouter
         yield 'ALL Methods' => ['method' => self::ALL_METHODS];
 
         if (null !== static::DOMAIN) {
-            yield 'GET Method & Domain' => ['method' => self::SINGLE_METHOD, 'domain' => static::DOMAIN];
-            yield 'ALL Methods' => ['method' => self::ALL_METHODS, 'domain' => static::DOMAIN];
+            yield 'GET Method,Host' => ['method' => self::SINGLE_METHOD, 'domain' => static::DOMAIN];
         }
     }
 
