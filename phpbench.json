@@ -2,7 +2,7 @@
     "runner.bootstrap": "vendor/autoload.php",
     "runner.path": "src/Routers",
     "runner.output_mode": "time",
-    "runner.time_unit": "milliseconds",
+    "runner.file_pattern": "*.php",
     "runner.retry_threshold": 5,
     "runner.php_config": {
         "opcache.enable": true,
