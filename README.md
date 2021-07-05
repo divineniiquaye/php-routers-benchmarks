@@ -32,8 +32,8 @@ Benchmarks runs on three cases:
 
 All the routers follows a set of [Parameterized Benchmarking](https://phpbench.readthedocs.io/en/latest/annotributes.html#id5):
 
-- in the first set benchmarking scenario, routers are to match only a single HTTP method.
-- in the second set benchmarking scenario, routers are to match all HTTP methods.
+- in the first set of benchmarking, routers are to match only a single(GET) HTTP method.
+- in the second set of benchmarking, routers are to match all(GET,POST,PATCH,PUT,DELETE) HTTP methods.
 - in the third and last set of benchmarking, routers are to match the first set including a domain if available.
 
 Benchmarking were conducted on the following routers:
