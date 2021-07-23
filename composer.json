@@ -25,7 +25,7 @@
         "illuminate/routing": "^8.49",
         "laminas/laminas-diactoros": "^2.5",
         "nette/routing": "^3.0",
-        "nikic/fast-route": "dev-master",
+        "nikic/fast-route": "^2.0@dev",
         "pecee/simple-router": "4.3.6.1",
         "rareloop/router": "^4.4",
         "symfony/routing": "5.4.x-dev",
@@ -37,12 +37,8 @@
     },
     "require-dev": {
         "composer/package-versions-deprecated": "^1.11",
-        "phpstan/phpstan": "^0.12",
-        "phpstan/phpstan-strict-rules": "^0.12",
-        "phpunit/phpunit": "^8.5 || ^9.5",
-        "squizlabs/php_codesniffer": "^3.5",
-        "vimeo/psalm": "^3.11",
-        "phpbench/phpbench": "^1.0"
+        "phpbench/phpbench": "^1.0",
+        "squizlabs/php_codesniffer": "^3.6"
     },
     "autoload": {
         "psr-4": {
@@ -53,18 +49,6 @@
         "psr-4": {
             "App\\BenchMark\\Tests\\": "tests/"
         }
-    },
-    "scripts": {
-        "phpcs": "phpcs -q",
-        "phpstan": "phpstan analyse",
-        "psalm": "psalm --show-info=true",
-        "phpunit": "phpunit --no-coverage",
-        "test": [
-            "@phpcs",
-            "@phpstan",
-            "@psalm",
-            "@phpunit"
-        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true
