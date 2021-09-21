@@ -29,6 +29,8 @@ Benchmarks runs on three cases:
 - **benchStaticRoutes**: match the best, average, worst, and invalid method route from the list of routing definitions. If domain is supported by router, matching is applied.
 - **benchDynamicRoutes**: match the best, average, worst, and invalid method route from the list of routing definitions. If domain is supported by router, matching is applied.
 - **benchOtherRoutes**: match other scenarios such as non existent route from routing definitions.
+- **benchRealStaticCase**: Runs both the dispatcher and scenerio all together against static routes and finds a match. If domain is supported by the router, matching is applied.
+- **benchRealDynamicCase**: Runs both the dispatcher and scenerio all together against dynamic routes and finds a match. If domain is supported by the router, matching is applied.
 
 All the routers follows a set of [Parameterized Benchmarking](https://phpbench.readthedocs.io/en/latest/annotributes.html#id5):
 

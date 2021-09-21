@@ -23,7 +23,6 @@ namespace App\BenchMark;
  * @Warmup(2)
  * @Revs(1000)
  * @Iterations(5)
- * @BeforeMethods({"createDispatcher"})
  *
  * @author Divine Niiquaye Ibok <divineibok@gmail.com>
  */
@@ -54,15 +53,17 @@ abstract class AbstractRouter
     /** @return \Generator<string,array<string,mixed>> */
     public function provideDispatcher(): iterable
     {
-        yield 'GET Method' => ['method' => self::SINGLE_METHOD];
-        yield 'ALL Methods' => ['method' => self::ALL_METHODS];
+        $matchMethod = static::ALL_METHODS[\array_rand(static::ALL_METHODS)] ?? static::SINGLE_METHOD;
+
+        yield $matchMethod => ['method' => $matchMethod];
 
         if (null !== static::DOMAIN) {
-            yield 'GET Method,Host' => ['method' => self::SINGLE_METHOD, 'domain' => static::DOMAIN];
+            yield $matchMethod . ',Host' => ['method' => $matchMethod, 'domain' => static::DOMAIN];
         }
     }
 
     /**
+     * @BeforeMethods("createDispatcher")
      * @ParamProviders({"provideDispatcher", "provideStaticRoutes"})
      *
      * @param array<string,mixed> $params
@@ -73,6 +74,7 @@ abstract class AbstractRouter
     }
 
     /**
+     * @BeforeMethods("createDispatcher")
      * @ParamProviders({"provideDispatcher", "provideDynamicRoutes"})
      *
      * @param array<string,mixed> $params
@@ -83,12 +85,35 @@ abstract class AbstractRouter
     }
 
     /**
+     * @BeforeMethods("createDispatcher")
      * @ParamProviders({"provideDispatcher", "provideOtherScenarios"})
      *
      * @param array<string,mixed> $params
      */
     public function benchOtherRoutes(array $params): void
     {
+        $this->runScenario($params);
+    }
+
+    /**
+     * @ParamProviders({"provideDispatcher", "provideStaticRoutes"})
+     *
+     * @param array<string,mixed> $params
+     */
+    public function benchRealStaticCase(array $params): void
+    {
+        $this->createDispatcher();
+        $this->runScenario($params);
+    }
+
+    /**
+     * @ParamProviders({"provideDispatcher", "provideStaticRoutes"})
+     *
+     * @param array<string,mixed> $params
+     */
+    public function benchRealDynamicCase(array $params): void
+    {
+        $this->createDispatcher();
         $this->runScenario($params);
     }
 }
