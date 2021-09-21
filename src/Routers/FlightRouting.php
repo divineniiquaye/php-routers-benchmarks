@@ -20,7 +20,7 @@ namespace App\BenchMark\Routers;
 use App\BenchMark\AbstractRouter;
 use Flight\Routing\Exceptions\MethodNotAllowedException;
 use Flight\Routing\Interfaces\RouteMatcherInterface;
-use Flight\Routing\{Route, RouteCollection, Router};
+use Flight\Routing\{Routes\FastRoute as Route, RouteCollection, Router};
 use Laminas\Diactoros\Uri;
 
 /**
@@ -71,18 +71,17 @@ class FlightRouting extends AbstractRouter
      */
     public function createDispatcher(): void
     {
-        $router = new Router();
-        $router->setCollection(static function (RouteCollection $collection): void {
-            for ($i = 0; $i < 400; ++$i) {
-                $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
-                $collection->addRoute('/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
+        $collection = new RouteCollection();
 
-                $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
-                $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
-            }
-        });
+        for ($i = 0; $i < 400; ++$i) {
+            $collection->fastRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
+            $collection->fastRoute('/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
 
-        $this->router = $router;
+            $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
+            $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
+        }
+
+        $this->router = Router::withCollection($collection);
     }
 
     /**
