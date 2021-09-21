@@ -27,7 +27,7 @@
         "nette/routing": "^3.0",
         "nikic/fast-route": "^2.0@dev",
         "pecee/simple-router": "4.3.6.1",
-        "rareloop/router": "^4.4",
+        "rareloop/router": "^4.4 || ^6.0",
         "symfony/routing": "5.4.x-dev",
         "sunrise/http-message": "^1.4",
         "sunrise/http-router": "^2.8",
