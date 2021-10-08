@@ -22,7 +22,7 @@ use Laminas\Diactoros\ServerRequest;
 use Rareloop\Router\Router;
 
 /**
- * @Skip
+ * Groups(['rareloop-router', 'raw'])
  */
 class RareloopRouter extends AbstractRouter
 {
