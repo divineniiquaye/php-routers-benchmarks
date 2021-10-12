@@ -30,7 +30,7 @@ use Sunrise\Http\ServerRequest\ServerRequestFactory;
 use Sunrise\Uri\Uri;
 
 /**
- * Groups(['sunrise-router', 'raw'])
+ * @Groups({"sunrise", "raw"})
  */
 class SunriseRouter extends AbstractRouter
 {
@@ -105,23 +105,13 @@ class SunriseRouter extends AbstractRouter
     protected function runScenario(array $params): void
     {
         $uri = new Uri((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']);
+        $request = (new ServerRequestFactory())->createServerRequest($params['invalid'] ?? $params['method'], $uri);
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $request = (new ServerRequestFactory())->createServerRequest($params['invalid'] ?? $params['method'], $uri);
-
-            try {
-                $result = (string) $this->router->handle($request)->getBody();
-                \assert($params['result'] === $result);
-            } catch (MethodNotAllowedException | RouteNotFoundException $e) {
-                \assert(!isset($params['result']));
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $request = (new ServerRequestFactory())->createServerRequest($method, $uri);
-                $result = (string) $this->router->handle($request)->getBody();
-
-                \assert($params['result'] === $result);
-            }
+        try {
+            $result = (string) $this->router->handle($request)->getBody();
+            \assert($params['result'] === $result);
+        } catch (MethodNotAllowedException | RouteNotFoundException $e) {
+            \assert(!isset($params['result']));
         }
     }
 }

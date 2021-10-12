@@ -23,6 +23,7 @@ use Pecee\SimpleRouter\Exceptions\NotFoundHttpException;
 use Pecee\SimpleRouter\SimpleRouter;
 
 /**
+ * @Groups({"pecee-router", "raw"})
  * @Skip
  */
 class PeceeRouter extends AbstractRouter
@@ -92,29 +93,13 @@ class PeceeRouter extends AbstractRouter
     {
         $request = $this->router::request();
         $request->setUrl(new Url((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']));
+        $request->setMethod($params['invalid'] ?? $params['method']);
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $request->setMethod($params['invalid'] ?? $params['method']);
-
-            try {
-                \ob_start();
-                $this->router::start();
-                $result = \ob_get_clean();
-
-                \assert($params['result'] === $result);
-            } catch (NotFoundHttpException $e) {
-                \assert($params['result'] === $e->getCode());
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $request->setMethod($method);
-
-                \ob_start();
-                $this->router::start();
-                $result = \ob_get_clean();
-
-                \assert($params['result'] === $result);
-            }
+        try {
+            $result = $this->router::router()->start();
+            \assert($params['result'] === $result);
+        } catch (NotFoundHttpException $e) {
+            \assert($params['result'] === $e->getCode());
         }
     }
 }

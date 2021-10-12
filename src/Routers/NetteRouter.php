@@ -24,7 +24,7 @@ use Nette\Routing\RouteList;
 use Nette\Routing\Router;
 
 /**
- * Groups(['nette', 'raw'])
+ * @Groups({"nette", "raw"})
  */
 class NetteRouter extends AbstractRouter
 {
@@ -90,20 +90,10 @@ class NetteRouter extends AbstractRouter
     protected function runScenario(array $params): void
     {
         $path = new UrlScript((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']);
+        $method = $params['invalid'] ?? $params['method'];
+        $request  = new Request($path, null, null, null, null, $method);
+        $result = $this->router->match($request);
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $method = $params['invalid'] ?? $params['method'];
-            $request  = new Request($path, null, null, null, null, $method);
-            $result = $this->router->match($request);
-
-            \assert(isset($params['result']) ? null === $result : \in_array($method, $result['method'], true));
-        } else {
-            foreach ($params['method'] as $method) {
-                $request  = new Request($path, null, null, null, null, $method);
-                $result = $this->router->match($request);
-
-                \assert(\in_array($method, $result['method'], true));
-            }
-        }
+        \assert(isset($params['result']) ? null === $result : \in_array($method, $result['method'], true));
     }
 }

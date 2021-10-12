@@ -25,7 +25,7 @@ use Laminas\Diactoros\ServerRequest;
 use Laminas\Diactoros\Uri;
 
 /**
- * Groups(['aura-router', 'raw'])
+ * @Groups({"aura", "raw"})
  */
 class AuraRouter extends AbstractRouter
 {
@@ -92,19 +92,9 @@ class AuraRouter extends AbstractRouter
     protected function runScenario(array $params): void
     {
         $uri = new Uri((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route']);
+        $request = new ServerRequest([], [], $uri, $params['invalid'] ?? $params['method']);
+        $result = $this->router->match($request);
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $request = new ServerRequest([], [], $uri, $params['invalid'] ?? $params['method']);
-            $result = $this->router->match($request);
-
-            \assert(isset($params['result']) ? $params['result'] === $result : $result instanceof Route);
-        } else {
-            foreach ($params['method'] as $method) {
-                $request = new ServerRequest([], [], $uri, $method);
-                $result = $this->router->match($request);
-
-                \assert($result instanceof Route);
-            }
-        }
+        \assert(isset($params['result']) ? $params['result'] === $result : $result instanceof Route);
     }
 }

@@ -21,12 +21,13 @@ use App\BenchMark\AbstractRouter;
 use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Routing\Loader\ClosureLoader;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 use Symfony\Component\Routing\Router;
 
 /**
- * Groups(['symfony', 'raw'])
+ * @Groups({"symfony", "raw"})
  */
 class SymfonyRouter extends AbstractRouter
 {
@@ -87,7 +88,7 @@ class SymfonyRouter extends AbstractRouter
             return $collection;
         };
 
-        $this->router = new Router(new ClosureLoader(), $resource);
+        $this->router = new Router(new ClosureLoader(), $resource, ['matcher_class' => UrlMatcher::class]);
     }
 
     /**
@@ -99,23 +100,14 @@ class SymfonyRouter extends AbstractRouter
             $this->router->getContext()->setHost($params['domain']);
         }
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $this->router->getContext()->setMethod($params['invalid'] ?? $params['method']);
+        $this->router->getContext()->setMethod($params['invalid'] ?? $params['method']);
 
-            try {
-                $result = $this->router->match($params['route']);
+        try {
+            $result = $this->router->match($params['route']);
 
-                \assert(!empty($result));
-            } catch (MethodNotAllowedException | ResourceNotFoundException $e) {
-                \assert($params['result'] === $e->getCode()); // If method does not match ...
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $this->router->getContext()->setMethod($method);
-                $result = $this->router->match($params['route']);
-
-                \assert(!empty($result));
-            }
+            \assert(!empty($result));
+        } catch (MethodNotAllowedException | ResourceNotFoundException $e) {
+            \assert($params['result'] === $e->getCode()); // If method does not match ...
         }
     }
 }

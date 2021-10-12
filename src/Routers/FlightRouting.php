@@ -24,7 +24,7 @@ use Flight\Routing\{Routes\FastRoute as Route, RouteCollection, Router};
 use Laminas\Diactoros\Uri;
 
 /**
- * Groups(['flight-routing', 'raw'])
+ * @Groups({"flight-routing", "raw"})
  */
 class FlightRouting extends AbstractRouter
 {
@@ -74,8 +74,8 @@ class FlightRouting extends AbstractRouter
         $collection = new RouteCollection();
 
         for ($i = 0; $i < 400; ++$i) {
-            $collection->fastRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
-            $collection->fastRoute('/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
+            $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
+            $collection->addRoute('/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
 
             $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
             $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
@@ -91,20 +91,12 @@ class FlightRouting extends AbstractRouter
     {
         $uri = new Uri((isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'] . '');
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            try {
-                $result = $this->router->match($params['invalid'] ?? $params['method'], $uri);
+        try {
+            $result = $this->router->match($params['invalid'] ?? $params['method'], $uri);
 
-                \assert(isset($params['result']) ? null === $result : $result instanceof Route);
-            } catch (MethodNotAllowedException $e) {
-                \assert($params['result'] === $e->getCode()); // If method does not match ...
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $result = $this->router->match($method, $uri);
-
-                \assert($result instanceof Route);
-            }
+            \assert(isset($params['result']) ? null === $result : $result instanceof Route);
+        } catch (MethodNotAllowedException $e) {
+            \assert($params['result'] === $e->getCode()); // If method does not match ...
         }
     }
 }

@@ -21,7 +21,7 @@ use AltoRouter;
 use App\BenchMark\AbstractRouter;
 
 /**
- * Groups(['alto-router', 'raw'])
+ * @Groups({"alto", "raw"})
  */
 class AltRouter extends AbstractRouter
 {
@@ -85,14 +85,7 @@ class AltRouter extends AbstractRouter
      */
     protected function runScenario(array $params): void
     {
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $result = $this->router->match($params['route'], $params['invalid'] ?? $params['method']);
-            \assert($params['result'] === (\is_array($result) ? $result['target'] : false));
-        } else {
-            foreach ($params['method'] as $method) {
-                $result = $this->router->match($params['route'], $method);
-                \assert($params['result'] === $result['target']);
-            }
-        }
+        $result = $this->router->match($params['route'], $params['invalid'] ?? $params['method']);
+        \assert($params['result'] === (\is_array($result) ? $result['target'] : false));
     }
 }

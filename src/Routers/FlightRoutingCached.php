@@ -20,7 +20,7 @@ namespace App\BenchMark\Routers;
 use Flight\Routing\{RouteCollection, Router};
 
 /**
- * Groups(['flight-routing', 'cached'])
+ * @Groups({"flight-routing", "cached"})
  */
 class FlightRoutingCached extends FlightRouting
 {
@@ -32,8 +32,8 @@ class FlightRoutingCached extends FlightRouting
         $router = new Router(null, __DIR__ . '/../caches/flight-cached-routes.php');
         $router->setCollection(static function (RouteCollection $collection): void {
             for ($i = 0; $i < 400; ++$i) {
-                $collection->fastRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
-                $collection->fastRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
+                $collection->addRoute('/abc' . $i, self::ALL_METHODS)->bind('static_' . $i);
+                $collection->addRoute('/abc{foo}_{bar}-{baz}/' . $i, self::ALL_METHODS)->bind('not_static_' . $i);
 
                 $collection->addRoute('//' . self::DOMAIN . '/host/abc' . $i, self::ALL_METHODS)->bind('static_host_' . $i);
                 $collection->addRoute('//' . self::DOMAIN . '/host/abc{foo}/' . $i, self::ALL_METHODS)->bind('not_static_host_' . $i);
