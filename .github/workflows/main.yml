@@ -3,13 +3,7 @@ on: [push, pull_request]
 
 jobs:
   benchmark:
-    strategy:
-      matrix:
-        operating-system: [ubuntu-latest]
-        php-versions: ['7.4', '8.0']
-        composer-flags: ["--ignore-platform-req=php"]
-
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -18,14 +12,14 @@ jobs:
       - name: Setup PHP, with composer and extensions
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
+          php-version: '7.4'
           extensions: bcmath, mbstring, intl, sodium, json, opcache, apcu
           coverage: none
           tools: composer:v2, cs2pr
           ini-values: memory_limit=-1
 
       - name: Install dependencies
-        run: composer update --no-progress --optimize-autoloader ${{ matrix.composer-flags }}
+        run: composer update --no-progress --optimize-autoloader
 
       - name: Check Coding Standard
         run: vendor/bin/phpcs
