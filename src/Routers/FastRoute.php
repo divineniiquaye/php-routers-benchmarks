@@ -22,7 +22,7 @@ use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
 
 /**
- * Groups(['fast-route', 'raw'])
+ * @Groups({"fast-route", "raw"})
  */
 class FastRoute extends AbstractRouter
 {
@@ -86,14 +86,7 @@ class FastRoute extends AbstractRouter
      */
     protected function runScenario(array $params): void
     {
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $result = $this->dispatcher->dispatch($params['invalid'] ?? $params['method'], $params['route']);
-            \assert($params['result'] === $result[0]);
-        } else {
-            foreach ($params['method'] as $method) {
-                $result = $this->dispatcher->dispatch($method, $params['route']);
-                \assert($params['result'] === $result[0]);
-            }
-        }
+        $result = $this->dispatcher->dispatch($params['invalid'] ?? $params['method'], $params['route']);
+        \assert($params['result'] === $result[0]);
     }
 }

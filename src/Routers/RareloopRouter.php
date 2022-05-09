@@ -22,7 +22,7 @@ use Laminas\Diactoros\ServerRequest;
 use Rareloop\Router\Router;
 
 /**
- * Groups(['rareloop-router', 'raw'])
+ * @Groups({"rareloop", "raw"})
  */
 class RareloopRouter extends AbstractRouter
 {
@@ -86,18 +86,9 @@ class RareloopRouter extends AbstractRouter
      */
     protected function runScenario(array $params): void
     {
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $request = new ServerRequest([], [], $params['route'], $params['invalid'] ?? $params['method']);
-            $result = (string) $this->router->match($request)->getBody();
+        $request = new ServerRequest([], [], $params['route'], $params['invalid'] ?? $params['method']);
+        $result = (string) $this->router->match($request)->getBody();
 
-            \assert($params['result'] === $result);
-        } else {
-            foreach ($params['method'] as $method) {
-                $request = new ServerRequest([], [], $params['route'], $method);
-                $result = (string) $this->router->match($request)->getBody();
-
-                \assert($params['result'] === $result);
-            }
-        }
+        \assert($params['result'] === $result);
     }
 }

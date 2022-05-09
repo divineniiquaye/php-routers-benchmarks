@@ -21,7 +21,7 @@ namespace App\BenchMark;
  * An abstraction for benchmarking routers.
  *
  * @Warmup(2)
- * @Revs(1000)
+ * @Revs(100)
  * @Iterations(5)
  *
  * @author Divine Niiquaye Ibok <divineibok@gmail.com>

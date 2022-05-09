@@ -30,12 +30,10 @@ use Spiral\Router\RouterInterface;
 use Spiral\Router\UriHandler;
 
 /**
- * Groups(['spiral-router', 'raw'])
+ * @Groups({"spiral", "raw"})
  */
 class SpiralRouter extends AbstractRouter
 {
-    protected const DOMAIN = null;
-
     private RouterInterface $router;
 
     /**
@@ -87,6 +85,9 @@ class SpiralRouter extends AbstractRouter
         for ($i = 0; $i < 400; ++$i) {
             $router->setRoute('static_' . $i, (new Route('/abc' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
             $router->setRoute('not_static_' . $i, (new Route('/abc<foo>/' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
+
+            $router->setRoute('static_host_' . $i, (new Route('//' . self::DOMAIN . '/host/abc' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
+            $router->setRoute('not_static_host_' . $i, (new Route('//' . self::DOMAIN . '/host/abc<foo>/' . $i, fn () => 'Spiral'))->withVerbs(...self::ALL_METHODS));
         }
 
         $this->router = $router;
@@ -97,22 +98,14 @@ class SpiralRouter extends AbstractRouter
      */
     protected function runScenario(array $params): void
     {
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            $request = new ServerRequest([], [], $params['route'], $params['invalid'] ?? $params['method']);
+        $uri = (isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'];
+        $request = new ServerRequest([], [], $uri, $params['invalid'] ?? $params['method']);
 
-            try {
-                $result = (string) $this->router->handle($request)->getBody();
-                \assert($params['result'] === $result);
-            } catch (RouteNotFoundException $e) {
-                \assert(!isset($params['result']));
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $request = new ServerRequest([], [], $params['route'], $method);
-                $result = (string) $this->router->handle($request)->getBody();
-
-                \assert($params['result'] === $result);
-            }
+        try {
+            $result = (string) $this->router->handle($request)->getBody();
+            \assert($params['result'] === $result);
+        } catch (RouteNotFoundException $e) {
+            \assert(!isset($params['result']));
         }
     }
 }

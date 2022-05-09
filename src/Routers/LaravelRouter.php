@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Groups(['laravel', 'raw'])
+ * @Groups({"laravel", "raw"})
  */
 class LaravelRouter extends AbstractRouter
 {
@@ -93,18 +93,11 @@ class LaravelRouter extends AbstractRouter
     {
         $path = (isset($params['domain']) ? '//' . $params['domain'] . '/host' : '') . $params['route'];
 
-        if (isset($params['invalid']) || \is_string($params['method'])) {
-            try {
-                $result = $this->router->dispatch(Request::create($path, $params['invalid'] ?? $params['method']))->getContent();
-                \assert($params['result'] === $result);
-            } catch (MethodNotAllowedHttpException | NotFoundHttpException $e) {
-                \assert(false === $params['result']); // If method does not match ...
-            }
-        } else {
-            foreach ($params['method'] as $method) {
-                $result = $this->router->dispatch(Request::create($path, $method))->getContent();
-                \assert($params['result'] === $result);
-            }
+        try {
+            $result = $this->router->dispatch(Request::create($path, $params['invalid'] ?? $params['method']))->getContent();
+            \assert($params['result'] === $result);
+        } catch (MethodNotAllowedHttpException | NotFoundHttpException $e) {
+            \assert(false === $params['result']); // If method does not match ...
         }
     }
 }

@@ -18,7 +18,7 @@ declare(strict_types=1);
 namespace App\BenchMark\Routers;
 
 /**
- * Groups(['fast-route', 'cached'])
+ * @Groups({"fast-route", "cached"})
  */
 class FastRouteCached extends FastRoute
 {

@@ -33,6 +33,7 @@
         "sunrise/http-router": "^2.8",
         "sunrise/http-server-request": "^1.1",
         "symfony/config": "5.4.x-dev",
+        "symfony/var-exporter": "5.4.x-dev",
         "spiral/router": "^2.8"
     },
     "require-dev": {

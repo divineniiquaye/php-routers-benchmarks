@@ -49,6 +49,7 @@ Benchmarking were conducted on the following routers:
 - [Nette](https://github.com/nette/routing)
 - [Sunrise](https://github.com/sunrise-php/http-router)
 - [SpiralRouter](https://github.com/spiral/router)
+- [RareloopRouter](https://github.com/Rareloop/router)
 
 
 ## ✳️ BenchMark Results
